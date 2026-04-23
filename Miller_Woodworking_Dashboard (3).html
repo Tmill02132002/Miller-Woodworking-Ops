@@ -1,0 +1,3642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Miller Woodworking // Operations Command</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #0a0c0f;
+    --bg-1: #10141a;
+    --bg-2: #161b23;
+    --bg-3: #1d232d;
+    --line: #252c38;
+    --line-bright: #323a48;
+    --ink-0: #e6e9ee;
+    --ink-1: #b4bac6;
+    --ink-2: #6b7280;
+    --ink-3: #454a55;
+    --red: #e63946;
+    --red-glow: rgba(230, 57, 70, 0.35);
+    --amber: #f59e0b;
+    --green: #22c55e;
+    --blue: #3b82f6;
+    --violet: #a855f7;
+    /* radius tokens */
+    --r-xs: 3px;
+    --r-sm: 5px;
+    --r-md: 7px;
+    --r-lg: 10px;
+    --r-xl: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg-0);
+    color: var(--ink-0);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: rgba(230, 57, 70, 0.2);
+  }
+
+  /* Prevent unwanted iOS behaviors on interactive elements */
+  button, input, select, textarea {
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  input[type="date"], input[type="color"] { -webkit-appearance: none; appearance: none; }
+  select {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 22px !important;
+  }
+
+  /* subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: 0.25;
+    pointer-events: none;
+    z-index: 0;
+    mask-image: radial-gradient(ellipse at 50% 40%, black 30%, transparent 80%);
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 15% 0%, rgba(230, 57, 70, 0.08), transparent 50%),
+      radial-gradient(ellipse at 85% 100%, rgba(59, 130, 246, 0.05), transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .display { font-family: 'Oswald', sans-serif; letter-spacing: 0.02em; }
+
+  /* ============ TOP BAR ============ */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(10, 12, 15, 0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+    padding: 14px 28px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 32px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .brand-logo {
+    display: inline-flex;
+    align-items: center;
+    color: #f2f2f2;
+    height: 48px;
+  }
+  .brand-logo svg {
+    height: 100%;
+    width: auto;
+    display: block;
+  }
+
+  .brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+    border-left: 1px solid var(--line-bright);
+    padding-left: 14px;
+  }
+
+  .brand-text .title {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.14em;
+    color: var(--ink-0);
+  }
+
+  .brand-text .sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--ink-2);
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+
+  .status-strip {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-2);
+  }
+
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px currentColor;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .dot.red { background: var(--red); box-shadow: 0 0 10px var(--red); }
+  .dot.amber { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .clock {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-1);
+    letter-spacing: 0.12em;
+    padding: 8px 14px;
+    border: 1px solid var(--line-bright);
+    background: var(--bg-1);
+    display: flex;
+    gap: 14px;
+  }
+
+  .clock .label { color: var(--ink-2); font-size: 10px; }
+
+  /* ============ VIEW TABS ============ */
+  .view-tabs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+
+  .view-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    background: transparent;
+    color: var(--ink-2);
+    border: 1px solid var(--line);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+
+  .view-tab:hover {
+    color: var(--ink-0);
+    border-color: var(--line-bright);
+    background: var(--bg-2);
+  }
+
+  .view-tab.active {
+    color: var(--ink-0);
+    background: var(--bg-2);
+    border-color: var(--red);
+    box-shadow: inset 0 -2px 0 var(--red);
+  }
+
+  .view-tab svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .status-item.compact {
+    padding-left: 16px;
+    margin-left: 8px;
+    border-left: 1px solid var(--line);
+    font-size: 10px;
+    color: var(--ink-2);
+  }
+
+  /* ============ VIEW PANELS ============ */
+  .view-panel { display: none; }
+  .view-panel.active { display: block; animation: fadeIn 0.25s ease; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ============ CALENDAR ============ */
+  .cal-control-panel {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    padding: 16px 22px;
+    margin-bottom: 22px;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .cal-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cal-range-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    color: var(--ink-0);
+    text-transform: uppercase;
+    margin-left: 10px;
+    white-space: nowrap;
+  }
+
+  .cal-scale {
+    display: flex;
+    border: 1px solid var(--line);
+  }
+
+  .scale-btn {
+    padding: 8px 16px;
+    background: var(--bg-2);
+    color: var(--ink-2);
+    border: none;
+    border-right: 1px solid var(--line);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+
+  .scale-btn:last-child { border-right: none; }
+  .scale-btn:hover { color: var(--ink-0); background: var(--bg-3); }
+  .scale-btn.active {
+    background: var(--red);
+    color: white;
+  }
+
+  .cal-legend {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-2);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .leg-item { display: flex; align-items: center; gap: 6px; }
+  .leg-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block;
+  }
+
+  .cal-body {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    min-height: 400px;
+    position: relative;
+  }
+
+  /* MONTH GRID */
+  .cal-month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-top: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+  }
+
+  .cal-dow-header {
+    background: var(--bg-2);
+    padding: 10px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    text-align: center;
+  }
+
+  .cal-day-cell {
+    min-height: 110px;
+    padding: 8px 8px 6px;
+    background: var(--bg-1);
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    transition: background 0.15s;
+  }
+
+  .cal-day-cell.other-month {
+    background: var(--bg-0);
+  }
+  .cal-day-cell.other-month .cal-day-num {
+    color: var(--ink-3);
+  }
+
+  .cal-day-cell.today {
+    background: color-mix(in srgb, var(--red) 6%, var(--bg-1));
+  }
+  .cal-day-cell.today .cal-day-num {
+    color: var(--red);
+    font-weight: 700;
+  }
+
+  .cal-day-cell.today::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--red);
+  }
+
+  .cal-day-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-1);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    margin-bottom: 2px;
+  }
+
+  .cal-task-chip {
+    font-size: 10.5px;
+    padding: 3px 6px 3px 8px;
+    background: var(--bg-2);
+    border-left: 3px solid var(--job-color, var(--priority-color, var(--ink-3)));
+    color: var(--ink-0);
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: background 0.15s;
+    line-height: 1.3;
+    position: relative;
+  }
+
+  .cal-task-chip[data-priority="critical"] { --priority-color: var(--red); }
+  .cal-task-chip[data-priority="high"] { --priority-color: var(--amber); }
+  .cal-task-chip[data-priority="medium"] { --priority-color: var(--blue); }
+  .cal-task-chip[data-priority="low"] { --priority-color: var(--ink-3); }
+
+  /* tiny priority pip in the top-right of every chip */
+  .cal-task-chip:not(.overflow)::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--priority-color, var(--ink-3));
+    box-shadow: 0 0 4px color-mix(in srgb, var(--priority-color, var(--ink-3)) 50%, transparent);
+  }
+
+  /* MONTH variant: 2-line chip with job name on top, task below */
+  .cal-task-chip.month {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 3px 10px 3px 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--job-color) 14%, var(--bg-2));
+  }
+  .cal-task-chip.month:hover {
+    background: color-mix(in srgb, var(--job-color) 22%, var(--bg-3));
+  }
+  .chip-job-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--job-color);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .chip-task-text {
+    font-size: 10.5px;
+    color: var(--ink-0);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* WEEK variant: bigger chip with job name line */
+  .cal-task-chip.week {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 7px 10px 7px 9px;
+    white-space: normal;
+    background: color-mix(in srgb, var(--job-color) 10%, var(--bg-2));
+  }
+  .cal-task-chip.week:hover {
+    background: color-mix(in srgb, var(--job-color) 18%, var(--bg-3));
+  }
+  .cal-task-chip.week .chip-task {
+    font-size: 11.5px;
+    color: var(--ink-0);
+    line-height: 1.3;
+  }
+  .cal-task-chip.week .chip-job {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .job-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+    box-shadow: 0 0 4px color-mix(in srgb, currentColor 0%, transparent);
+  }
+
+  .cal-task-chip.done { opacity: 0.45; text-decoration: line-through; }
+  .cal-task-chip:hover { background: var(--bg-3); }
+  .cal-task-chip.overflow {
+    background: transparent;
+    border-left: none;
+    color: var(--ink-2);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    padding-left: 3px;
+  }
+
+  /* WEEK VIEW */
+  .cal-week-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-top: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+  }
+
+  .cal-week-col {
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--line);
+  }
+
+  .cal-week-header {
+    padding: 10px 12px;
+    background: var(--bg-2);
+    border-bottom: 1px solid var(--line);
+    text-align: center;
+  }
+
+  .cal-week-header .dow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .cal-week-header .daynum {
+    font-family: 'Oswald', sans-serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--ink-0);
+  }
+
+  .cal-week-header.today .daynum { color: var(--red); }
+  .cal-week-header.today {
+    background: color-mix(in srgb, var(--red) 10%, var(--bg-2));
+    border-top: 2px solid var(--red);
+    margin-top: -1px;
+  }
+
+  .cal-week-tasks {
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+  }
+
+  .cal-week-tasks .cal-task-chip {
+    white-space: normal;
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+
+  .cal-week-empty {
+    padding: 24px 8px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-3);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  /* DAY VIEW */
+  .cal-day-view {
+    padding: 32px 32px 40px;
+  }
+
+  .cal-day-header {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    margin-bottom: 24px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .cal-day-big {
+    font-family: 'Oswald', sans-serif;
+    font-size: 72px;
+    font-weight: 500;
+    line-height: 0.9;
+    color: var(--ink-0);
+  }
+
+  .cal-day-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .cal-day-meta .dow-big {
+    font-family: 'Oswald', sans-serif;
+    font-size: 26px;
+    color: var(--ink-0);
+    letter-spacing: 0.04em;
+  }
+
+  .cal-day-meta .month-big {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-2);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .cal-day-meta .task-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--red);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  .cal-day-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 720px;
+  }
+
+  .cal-day-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 16px;
+    align-items: center;
+    padding: 14px 16px;
+    background: color-mix(in srgb, var(--job-color, transparent) 6%, var(--bg-2));
+    border-left: 4px solid var(--job-color, var(--ink-3));
+    transition: background 0.15s;
+    position: relative;
+  }
+
+  .cal-day-row[data-priority="critical"] { --priority-color: var(--red); }
+  .cal-day-row[data-priority="high"] { --priority-color: var(--amber); }
+  .cal-day-row[data-priority="medium"] { --priority-color: var(--blue); }
+  .cal-day-row[data-priority="low"] { --priority-color: var(--ink-3); }
+
+  .cal-day-row.done { opacity: 0.45; }
+  .cal-day-row.done .task-name { text-decoration: line-through; }
+  .cal-day-row:hover {
+    background: color-mix(in srgb, var(--job-color, transparent) 12%, var(--bg-3));
+  }
+
+  .cal-day-row .row-check {
+    width: 16px; height: 16px;
+    border: 1px solid var(--ink-2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cal-day-row.done .row-check {
+    background: var(--job-color);
+    border-color: var(--job-color);
+  }
+  .cal-day-row.done .row-check::after {
+    content: '';
+    width: 8px; height: 4px;
+    border: 2px solid white;
+    border-top: 0; border-right: 0;
+    transform: rotate(-45deg) translate(1px, -1px);
+  }
+
+  .cal-day-row .row-body {
+    min-width: 0;
+  }
+  .cal-day-row .task-name {
+    font-size: 14px;
+    color: var(--ink-0);
+  }
+  .cal-day-row .task-job {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--job-color, var(--ink-2));
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .cal-day-row .prio-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    background: color-mix(in srgb, var(--priority-color) 18%, transparent);
+    color: var(--priority-color);
+    border: 1px solid color-mix(in srgb, var(--priority-color) 40%, transparent);
+  }
+
+  .cal-empty {
+    padding: 60px 24px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-3);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  /* YEAR VIEW */
+  .cal-year-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .cal-year-month {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .cal-year-month:hover {
+    border-color: var(--red);
+    background: var(--bg-3);
+  }
+
+  .cal-year-month.current {
+    border-color: var(--red);
+  }
+  .cal-year-month.current::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: -1px;
+    width: 10px; height: 10px;
+    border-top: 2px solid var(--red);
+    border-left: 2px solid var(--red);
+  }
+
+  .cal-year-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    color: var(--ink-0);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .cal-year-title .count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-2);
+    letter-spacing: 0.1em;
+  }
+
+  .cal-year-mini {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+
+  .cal-year-mini .mini-dow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    color: var(--ink-3);
+    text-align: center;
+    letter-spacing: 0.05em;
+    padding: 2px 0;
+  }
+
+  .cal-year-mini .mini-day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-2);
+    position: relative;
+    padding-bottom: 3px;
+  }
+
+  .cal-year-mini .mini-day.other { color: var(--ink-3); opacity: 0.4; }
+  .cal-year-mini .mini-day.today {
+    background: var(--red);
+    color: white;
+    font-weight: 600;
+  }
+  .cal-year-mini .mini-day.has-tasks {
+    color: var(--ink-0);
+    font-weight: 600;
+  }
+  .cal-year-mini .mini-dots {
+    position: absolute;
+    bottom: 1px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 1.5px;
+  }
+  .cal-year-mini .mini-jobdot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .cal-year-mini .mini-day.today .mini-jobdot {
+    border: 0.5px solid white;
+  }
+
+  /* ============ LAYOUT ============ */
+  .shell {
+    position: relative;
+    z-index: 1;
+    padding: 28px;
+    max-width: 1800px;
+    margin: 0 auto;
+  }
+
+  /* ============ METRICS ROW ============ */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .metric {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .metric::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--accent, var(--ink-3));
+  }
+
+  .metric[data-accent="red"] { --accent: var(--red); }
+  .metric[data-accent="amber"] { --accent: var(--amber); }
+  .metric[data-accent="green"] { --accent: var(--green); }
+  .metric[data-accent="blue"] { --accent: var(--blue); }
+  .metric[data-accent="violet"] { --accent: var(--violet); }
+
+  .metric .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-2);
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .metric .label .code {
+    color: var(--accent, var(--ink-3));
+  }
+
+  .metric .value {
+    font-family: 'Oswald', sans-serif;
+    font-size: 38px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--ink-0);
+  }
+
+  .metric .sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-2);
+    margin-top: 6px;
+    letter-spacing: 0.1em;
+  }
+
+  /* ============ CONTROL PANEL ============ */
+  .control-panel {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    padding: 18px 22px;
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .panel-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--ink-2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .panel-label::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--red);
+    display: inline-block;
+    box-shadow: 0 0 8px var(--red);
+  }
+
+  .filter-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    background: var(--bg-2);
+    color: var(--ink-1);
+    border: 1px solid var(--line);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .filter-btn:hover {
+    border-color: var(--line-bright);
+    color: var(--ink-0);
+    background: var(--bg-3);
+  }
+
+  .filter-btn.active {
+    background: var(--red);
+    border-color: var(--red);
+    color: white;
+    box-shadow: 0 0 12px var(--red-glow);
+  }
+
+  .filter-btn .count {
+    background: rgba(0,0,0,0.25);
+    padding: 1px 6px;
+    font-size: 10px;
+    border-radius: 2px;
+  }
+
+  .filter-btn.active .count {
+    background: rgba(255,255,255,0.2);
+  }
+
+  .btn-primary, .btn-ghost {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    cursor: pointer;
+    border: 1px solid;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn-primary {
+    background: var(--red);
+    border-color: var(--red);
+    color: white;
+  }
+  .btn-primary:hover {
+    background: #c62a37;
+    box-shadow: 0 0 16px var(--red-glow);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border-color: var(--line-bright);
+    color: var(--ink-1);
+  }
+  .btn-ghost:hover {
+    border-color: var(--ink-1);
+    color: var(--ink-0);
+  }
+
+  .btn-icon {
+    width: 12px;
+    height: 12px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+  }
+
+  /* ============ LAYOUT TOGGLE ============ */
+  .control-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .layout-toggle {
+    display: flex;
+    border: 1px solid var(--line);
+    margin-right: 4px;
+  }
+  .layout-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 12px;
+    background: var(--bg-2);
+    color: var(--ink-2);
+    border: none;
+    border-right: 1px solid var(--line);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+  .layout-btn:last-child { border-right: none; }
+  .layout-btn svg { width: 12px; height: 12px; }
+  .layout-btn:hover { color: var(--ink-0); background: var(--bg-3); }
+  .layout-btn.active {
+    background: var(--red);
+    color: white;
+  }
+
+  .layout-panel { display: none; }
+  .layout-panel.active { animation: fadeIn 0.2s ease; }
+  /* Override defaults so inactive panels are truly hidden */
+  .jobs-grid.layout-panel { display: none; }
+  .focus-layout.layout-panel { display: none; }
+  .jobs-grid.layout-panel.active {
+    display: grid;
+  }
+  .focus-layout.layout-panel.active {
+    display: grid;
+  }
+
+  /* ============ FOCUS LAYOUT ============ */
+  .focus-layout {
+    grid-template-columns: 320px 1fr;
+    gap: 18px;
+    align-items: start;
+    min-height: 500px;
+  }
+
+  .focus-sidebar {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 96px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+  }
+
+  .focus-sidebar-header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--line);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-2);
+  }
+
+  .focus-sidebar-header .job-total {
+    color: var(--red);
+    font-weight: 600;
+  }
+
+  .focus-jobs-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .focus-job-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    transition: background 0.15s;
+    position: relative;
+  }
+
+  .focus-job-item:hover {
+    background: var(--bg-2);
+  }
+
+  .focus-job-item.selected {
+    background: color-mix(in srgb, var(--job-color, var(--red)) 14%, var(--bg-1));
+  }
+
+  .focus-job-item.selected::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--job-color, var(--red));
+    box-shadow: 0 0 12px color-mix(in srgb, var(--job-color, var(--red)) 60%, transparent);
+  }
+
+  .focus-job-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--job-color, var(--ink-3));
+    flex-shrink: 0;
+    box-shadow: 0 0 0 2px var(--bg-1), 0 0 0 3px color-mix(in srgb, var(--job-color, var(--ink-3)) 30%, transparent);
+  }
+
+  .focus-job-item .job-info {
+    min-width: 0;
+  }
+  .focus-job-item .job-info .name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink-0);
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .focus-job-item .job-info .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-2);
+    letter-spacing: 0.1em;
+    margin-top: 3px;
+    text-transform: uppercase;
+  }
+  .focus-job-item .job-info .meta .done {
+    color: var(--job-color, var(--ink-1));
+    font-weight: 600;
+  }
+
+  .focus-job-item .chev {
+    color: var(--ink-3);
+    font-size: 14px;
+    transition: transform 0.15s, color 0.15s;
+  }
+  .focus-job-item.selected .chev {
+    color: var(--job-color, var(--red));
+    transform: translateX(2px);
+  }
+
+  .focus-sidebar-empty {
+    padding: 30px 20px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-3);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .focus-sidebar-add {
+    padding: 12px 16px;
+    border-top: 1px solid var(--line);
+    background: var(--bg-2);
+  }
+
+  .focus-add-btn {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    border: 1px dashed var(--line-bright);
+    color: var(--ink-1);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .focus-add-btn:hover {
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  /* Detail pane */
+  .focus-detail {
+    min-height: 500px;
+  }
+
+  .focus-detail .job-card {
+    /* reuse existing job card styles; detail pane just hosts a single expanded card */
+  }
+
+  .focus-welcome {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    padding: 80px 40px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    min-height: 500px;
+    justify-content: center;
+    position: relative;
+  }
+
+  .focus-welcome::before,
+  .focus-welcome::after {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    border-color: var(--red);
+    border-style: solid;
+  }
+  .focus-welcome::before {
+    top: -1px; left: -1px;
+    border-width: 1px 0 0 1px;
+  }
+  .focus-welcome::after {
+    bottom: -1px; right: -1px;
+    border-width: 0 1px 1px 0;
+  }
+
+  .focus-welcome-icon {
+    width: 64px;
+    height: 64px;
+    opacity: 0.6;
+  }
+
+  .focus-welcome-icon svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .focus-welcome-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 28px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-0);
+  }
+
+  .focus-welcome-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    max-width: 420px;
+    line-height: 1.8;
+  }
+
+  .focus-welcome-hint {
+    margin-top: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .focus-welcome-hint .arrow {
+    display: inline-block;
+    color: var(--red);
+    animation: arrowPulse 1.5s ease-in-out infinite;
+  }
+  @keyframes arrowPulse {
+    0%, 100% { transform: translateX(0); opacity: 0.6; }
+    50% { transform: translateX(-6px); opacity: 1; }
+  }
+
+  /* In focus mode, the single detail card takes full width and has different spacing */
+  .focus-detail .job-card {
+    margin-bottom: 0;
+  }
+
+  /* Mobile-only back button in detail pane */
+  .focus-back-btn {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    color: var(--ink-1);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    width: 100%;
+  }
+  .focus-back-btn:hover {
+    color: var(--ink-0);
+    border-color: var(--line-bright);
+  }
+  .focus-back-btn svg { width: 12px; height: 12px; }
+
+  /* ============ JOBS GRID ============ */
+  .jobs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+    gap: 18px;
+  }
+
+  .job-card {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+
+  .job-card:hover {
+    border-color: color-mix(in srgb, var(--job-color, var(--red)) 60%, var(--line));
+  }
+
+  /* top color bar */
+  .job-color-bar {
+    height: 3px;
+    background: var(--job-color, var(--red));
+    box-shadow: 0 0 12px color-mix(in srgb, var(--job-color, var(--red)) 50%, transparent);
+    border-top-left-radius: var(--r-lg);
+    border-top-right-radius: var(--r-lg);
+  }
+
+  /* crosshair corner mark - inherits job color */
+  .job-card::before,
+  .job-card::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-color: var(--job-color, var(--red));
+    border-style: solid;
+    z-index: 1;
+  }
+  .job-card::before {
+    top: -1px; left: -1px;
+    border-width: 1px 0 0 1px;
+  }
+  .job-card::after {
+    bottom: -1px; right: -1px;
+    border-width: 0 1px 1px 0;
+  }
+
+  /* color swatch button in job actions */
+  .color-swatch-btn {
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .color-swatch-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.15), 0 0 12px currentColor;
+  }
+  .color-swatch-btn::after {
+    content: '';
+    position: absolute;
+    inset: 5px;
+    border: 1.5px solid rgba(255,255,255,0.35);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .color-swatch-btn:hover::after { opacity: 1; }
+
+  /* color picker popover */
+  .color-picker-popover {
+    position: absolute;
+    z-index: 200;
+    background: var(--bg-1);
+    border: 1px solid var(--line-bright);
+    padding: 14px;
+    min-width: 220px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.6), 0 0 0 1px var(--red) inset;
+    animation: popIn 0.12s ease-out;
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .color-picker-popover::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: -1px;
+    width: 10px; height: 10px;
+    border-top: 2px solid var(--red);
+    border-left: 2px solid var(--red);
+  }
+  .picker-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    margin-bottom: 10px;
+  }
+  .picker-swatches {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .picker-swatch {
+    aspect-ratio: 1;
+    border: 1px solid rgba(255,255,255,0.08);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    padding: 0;
+  }
+  .picker-swatch:hover {
+    transform: scale(1.15);
+    border-color: rgba(255,255,255,0.4);
+  }
+  .picker-swatch.active {
+    box-shadow: 0 0 0 2px var(--bg-1), 0 0 0 3px currentColor, 0 0 10px currentColor;
+  }
+  .picker-swatch.active { color: inherit; }
+  .picker-custom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+    cursor: pointer;
+  }
+  .picker-custom input[type="color"] {
+    width: 40px;
+    height: 24px;
+    border: 1px solid var(--line-bright);
+    background: var(--bg-2);
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .job-header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+    align-items: start;
+  }
+
+  .job-meta .job-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--job-color, var(--red));
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: block;
+    cursor: text;
+    outline: none;
+    padding: 1px 0;
+    min-width: 30px;
+  }
+  .job-meta .job-code:focus {
+    background: var(--bg-2);
+    padding: 1px 6px;
+    margin-left: -6px;
+    margin-right: -6px;
+    border-radius: var(--r-sm);
+  }
+
+  .job-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--ink-0);
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+    cursor: text;
+    outline: none;
+    padding: 2px 0;
+  }
+
+  .job-title:focus {
+    background: var(--bg-2);
+    padding: 2px 6px;
+    margin: 0 -6px;
+  }
+
+  .job-client {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-2);
+    margin-top: 4px;
+    cursor: text;
+    outline: none;
+  }
+  .job-client:focus {
+    background: var(--bg-2);
+    padding: 2px 6px;
+    margin: 0 -6px;
+  }
+
+  .job-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .icon-btn {
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink-2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .icon-btn:hover {
+    color: var(--ink-0);
+    border-color: var(--line-bright);
+    background: var(--bg-2);
+  }
+
+  .icon-btn.danger:hover {
+    color: var(--red);
+    border-color: var(--red);
+  }
+
+  .icon-btn svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+  }
+
+  /* job progress */
+  .job-stats {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    background: var(--bg-2);
+  }
+
+  .stat-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--ink-2);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .stat-pill strong {
+    color: var(--ink-0);
+    font-weight: 600;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--bg-3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red), #ff6470);
+    transition: width 0.4s ease;
+  }
+
+  /* tasks list */
+  .tasks-list {
+    padding: 10px;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .task {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--priority-color, var(--ink-3));
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 12px;
+    align-items: center;
+    transition: background 0.15s;
+  }
+
+  .task:hover {
+    background: var(--bg-3);
+  }
+
+  .task[data-priority="critical"] { --priority-color: var(--red); }
+  .task[data-priority="high"] { --priority-color: var(--amber); }
+  .task[data-priority="medium"] { --priority-color: var(--blue); }
+  .task[data-priority="low"] { --priority-color: var(--ink-3); }
+
+  .task.done {
+    opacity: 0.45;
+  }
+
+  .task.done .task-text {
+    text-decoration: line-through;
+  }
+
+  .task-check {
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--ink-2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .task-check:hover {
+    border-color: var(--ink-0);
+  }
+
+  .task.done .task-check {
+    background: var(--priority-color);
+    border-color: var(--priority-color);
+  }
+
+  .task.done .task-check::after {
+    content: '';
+    width: 8px;
+    height: 4px;
+    border: 2px solid white;
+    border-top: 0;
+    border-right: 0;
+    transform: rotate(-45deg) translate(1px, -1px);
+  }
+
+  .task-text {
+    font-size: 13px;
+    color: var(--ink-0);
+    line-height: 1.35;
+    cursor: text;
+    outline: none;
+  }
+  .task-text:focus {
+    background: var(--bg-1);
+    padding: 2px 6px;
+    margin: -2px -6px;
+  }
+
+  .task-priority-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    background: color-mix(in srgb, var(--priority-color) 18%, transparent);
+    color: var(--priority-color);
+    border: 1px solid color-mix(in srgb, var(--priority-color) 40%, transparent);
+    cursor: pointer;
+  }
+
+  .task-deadline {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-1);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .task-deadline.overdue {
+    color: var(--red);
+  }
+  .task-deadline.soon {
+    color: var(--amber);
+  }
+
+  .task-del {
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    border: none;
+    color: var(--ink-3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: color 0.15s;
+  }
+  .task-del:hover { color: var(--red); }
+
+  .task-empty {
+    text-align: center;
+    padding: 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* add task form */
+  .add-task-form {
+    padding: 12px;
+    border-top: 1px solid var(--line);
+    background: var(--bg-2);
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .add-task-form input[type="text"],
+  .add-task-form input[type="date"],
+  .add-task-form select {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    color: var(--ink-0);
+    padding: 7px 10px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .add-task-form input:focus,
+  .add-task-form select:focus {
+    border-color: var(--red);
+  }
+
+  .add-task-form input[type="date"] {
+    color-scheme: dark;
+    width: 135px;
+  }
+
+  .add-task-form select {
+    width: 110px;
+    cursor: pointer;
+  }
+
+  .add-btn {
+    width: 32px;
+    height: 32px;
+    background: var(--red);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+  .add-btn:hover {
+    background: #c62a37;
+  }
+
+  /* add job card */
+  .add-job-card {
+    background: var(--bg-1);
+    border: 1px dashed var(--line-bright);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 40px;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-height: 280px;
+  }
+
+  .add-job-card:hover {
+    border-color: var(--red);
+    background: var(--bg-2);
+  }
+
+  .add-job-card .plus {
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line-bright);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--ink-1);
+    font-weight: 300;
+    transition: all 0.2s;
+  }
+
+  .add-job-card:hover .plus {
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  .add-job-card .text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+
+  /* modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; }
+
+  .modal {
+    background: var(--bg-1);
+    border: 1px solid var(--line-bright);
+    padding: 28px;
+    width: 100%;
+    max-width: 480px;
+    position: relative;
+  }
+
+  .modal::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: -1px;
+    width: 14px; height: 14px;
+    border-top: 2px solid var(--red);
+    border-left: 2px solid var(--red);
+  }
+  .modal::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; right: -1px;
+    width: 14px; height: 14px;
+    border-bottom: 2px solid var(--red);
+    border-right: 2px solid var(--red);
+  }
+
+  .modal h3 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .modal .modal-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    margin-bottom: 22px;
+  }
+
+  .field { margin-bottom: 16px; }
+
+  .field label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    margin-bottom: 6px;
+  }
+
+  .field input {
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    color: var(--ink-0);
+    padding: 10px 12px;
+    outline: none;
+  }
+  .field input:focus {
+    border-color: var(--red);
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 22px;
+  }
+
+  /* footer tag */
+  .footer-tag {
+    text-align: center;
+    margin-top: 48px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* scroll */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--bg-0); }
+  ::-webkit-scrollbar-thumb { background: var(--line); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--line-bright); }
+
+  /* responsive */
+  /* ============ ROUNDED CORNERS ============ */
+  /* Large radius - main containers and cards */
+  .job-card,
+  .metric,
+  .control-panel,
+  .cal-control-panel,
+  .cal-body,
+  .cal-year-month,
+  .focus-sidebar,
+  .focus-welcome,
+  .add-job-card,
+  .clock {
+    border-radius: var(--r-lg);
+  }
+
+  /* Medium radius - panels, sections, secondary cards */
+  .filter-btn,
+  .btn-primary,
+  .btn-ghost,
+  .view-tab,
+  .layout-toggle,
+  .cal-scale,
+  .cal-day-row,
+  .cal-year-mini .mini-day,
+  .cal-week-col,
+  .color-picker-popover,
+  .focus-add-btn,
+  .focus-back-btn,
+  .task,
+  .cal-task-chip.week,
+  .cal-task-chip.month {
+    border-radius: var(--r-md);
+  }
+
+  /* Segmented controls - round the outer, square the inner borders */
+  .cal-scale,
+  .layout-toggle {
+    overflow: hidden;
+  }
+
+  /* Small radius - pills, chips, tags, inputs, small buttons */
+  .stat-pill,
+  .task-priority-tag,
+  .task-check,
+  .icon-btn,
+  .color-swatch-btn,
+  .cal-task-chip,
+  .prio-tag,
+  .row-check,
+  .filter-btn .count,
+  .add-task-form input,
+  .add-task-form select,
+  .field input,
+  .picker-swatch,
+  .picker-custom input[type="color"] {
+    border-radius: var(--r-sm);
+  }
+
+  /* Extra-small radius - tiny elements */
+  .scale-btn,
+  .layout-btn,
+  .task-del,
+  .add-btn {
+    border-radius: var(--r-xs);
+  }
+
+  /* Modal - bigger radius */
+  .modal {
+    border-radius: var(--r-xl);
+  }
+
+  /* Progress bars - pill shape */
+  .progress-bar,
+  .progress-fill {
+    border-radius: 999px;
+  }
+
+  /* Dots stay round */
+  .dot,
+  .leg-dot,
+  .job-dot,
+  .focus-job-swatch,
+  .mini-jobdot {
+    border-radius: 50%;
+  }
+
+  /* Keep grid cells (month calendar day cells) square-ish for tight grid feel */
+  .cal-day-cell { border-radius: 0; }
+  .cal-dow-header { border-radius: 0; }
+
+  /* Fine-tune: calendar grid corners - round only the outer 4 corners of the month grid */
+  .cal-month-grid,
+  .cal-week-grid {
+    border-radius: var(--r-md);
+    overflow: hidden;
+  }
+
+  /* Job card progress bar inside stats */
+  .job-stats .progress-bar { border-radius: 999px; }
+
+  /* Inner corners of segmented buttons get reset */
+  .cal-scale .scale-btn,
+  .layout-toggle .layout-btn { border-radius: 0; }
+
+  /* Remove radius on hidden overflow containers where it would show as bleeding */
+  .color-picker-popover { overflow: visible; }
+
+  /* Hide corner brackets on rounded cards - they clash with the rounded aesthetic */
+  .job-card::before,
+  .job-card::after,
+  .modal::before,
+  .modal::after,
+  .focus-welcome::before,
+  .focus-welcome::after,
+  .color-picker-popover::before,
+  .cal-year-month.current::before {
+    display: none;
+  }
+
+  @media (max-width: 1200px) {
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .metric:nth-child(5) { grid-column: 1 / -1; }
+    .cal-control-panel { grid-template-columns: 1fr auto; }
+    .cal-legend { grid-column: 1 / -1; }
+    .cal-year-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  /* Tablet / landscape phone */
+  @media (max-width: 900px) {
+    .cal-year-grid { grid-template-columns: repeat(2, 1fr); }
+    .cal-day-cell { min-height: 90px; }
+    .jobs-grid { grid-template-columns: 1fr; }
+    .focus-layout { grid-template-columns: 260px 1fr; gap: 14px; }
+    .focus-job-item .job-info .name { font-size: 14px; }
+  }
+
+  /* ============ MOBILE / iOS ============ */
+  @media (max-width: 760px) {
+    /* Use iOS safe areas for notch support */
+    .topbar {
+      grid-template-columns: 1fr;
+      gap: 10px;
+      padding: 12px 16px;
+      padding-top: calc(12px + env(safe-area-inset-top));
+      padding-left: calc(16px + env(safe-area-inset-left));
+      padding-right: calc(16px + env(safe-area-inset-right));
+    }
+    .shell {
+      padding: 14px;
+      padding-left: calc(14px + env(safe-area-inset-left));
+      padding-right: calc(14px + env(safe-area-inset-right));
+      padding-bottom: calc(14px + env(safe-area-inset-bottom));
+    }
+
+    /* Brand + tabs layout */
+    .brand { gap: 10px; }
+    .brand-logo { height: 36px; }
+    .brand-text { padding-left: 10px; }
+    .brand-text .title { font-size: 13px; letter-spacing: 0.1em; }
+    .brand-text .sub { font-size: 9px; }
+
+    .view-tabs {
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      gap: 6px;
+      width: 100%;
+    }
+    .view-tab {
+      padding: 8px 12px;
+      font-size: 10px;
+      flex: 1;
+      justify-content: center;
+      min-width: 0;
+    }
+    .view-tab svg { width: 11px; height: 11px; }
+    .status-item.compact {
+      border-left: none;
+      padding-left: 0;
+      margin-left: 0;
+      flex-basis: 100%;
+      justify-content: flex-start;
+      padding-top: 4px;
+      order: 3;
+    }
+
+    .clock {
+      justify-self: flex-start;
+      font-size: 10px;
+      padding: 6px 10px;
+      gap: 10px;
+    }
+    .clock .label { font-size: 8px; }
+
+    /* Metrics */
+    .metrics { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .metric { padding: 12px; }
+    .metric .label { font-size: 9px; letter-spacing: 0.14em; }
+    .metric .value { font-size: 26px; }
+    .metric .sub { font-size: 9px; }
+
+    /* Filter/control panel on dashboard */
+    .control-panel { grid-template-columns: 1fr; padding: 12px; gap: 12px; }
+    .panel-label { font-size: 10px; }
+    .filter-btn { font-size: 10px; padding: 7px 10px; }
+    .btn-primary, .btn-ghost { font-size: 10px; padding: 9px 12px; }
+
+    /* Dashboard job cards */
+    .jobs-grid { grid-template-columns: 1fr; gap: 14px; }
+
+    /* Focus layout on mobile — sidebar shown full-width; selecting a job shows the detail over it */
+    .focus-layout {
+      grid-template-columns: 1fr;
+      gap: 12px;
+      position: relative;
+    }
+    .focus-sidebar {
+      position: static;
+      max-height: none;
+    }
+    .focus-layout.detail-open .focus-sidebar {
+      display: none;
+    }
+    .focus-detail { min-height: auto; }
+    .focus-layout:not(.detail-open) .focus-detail { display: none; }
+    .focus-back-btn {
+      display: flex !important;
+    }
+    .focus-welcome {
+      padding: 50px 24px;
+      min-height: 360px;
+    }
+    .focus-welcome-title { font-size: 22px; }
+
+    /* layout toggle buttons shrink */
+    .layout-btn { padding: 8px 10px; font-size: 9px; }
+    .layout-btn svg { width: 11px; height: 11px; }
+    .control-actions {
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    .control-actions .btn-ghost,
+    .control-actions .btn-primary { flex: 1; justify-content: center; }
+    .job-header { padding: 14px 14px 10px; }
+    .job-title { font-size: 18px; }
+    .job-stats { padding: 10px 14px; gap: 10px; }
+    .stat-pill { font-size: 9px; }
+    .tasks-list { padding: 8px; }
+    .task {
+      grid-template-columns: auto 1fr auto;
+      grid-template-rows: auto auto;
+      gap: 8px 10px;
+      padding: 9px 10px;
+    }
+    .task-text { font-size: 12px; grid-column: 2 / 3; grid-row: 1; }
+    .task-check { grid-column: 1; grid-row: 1 / 3; align-self: start; margin-top: 2px; }
+    .task-del { grid-column: 3; grid-row: 1; }
+    .task-priority-tag {
+      grid-column: 2 / 3;
+      grid-row: 2;
+      justify-self: start;
+      margin: 0;
+    }
+    .task-deadline {
+      grid-column: 3;
+      grid-row: 2;
+      justify-self: end;
+      font-size: 10px;
+    }
+
+    /* Add task form */
+    .add-task-form {
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 10px;
+    }
+    .add-task-form input[type="text"] { grid-column: 1 / -1; font-size: 16px; padding: 10px; }
+    .add-task-form select { width: 100%; font-size: 12px; }
+    .add-task-form input[type="date"] { width: 100%; font-size: 12px; color-scheme: dark; }
+    .add-btn { grid-column: 1 / -1; width: 100%; height: 40px; }
+
+    /* ============ CALENDAR MOBILE ============ */
+    .cal-control-panel {
+      grid-template-columns: 1fr;
+      padding: 12px;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .cal-nav {
+      flex-wrap: nowrap;
+      gap: 8px;
+      width: 100%;
+    }
+    .cal-nav .btn-ghost {
+      padding: 8px 12px;
+      font-size: 10px;
+    }
+    .cal-range-title {
+      font-size: 16px;
+      margin-left: 6px;
+      letter-spacing: 0.03em;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .cal-scale {
+      width: 100%;
+    }
+    .scale-btn {
+      flex: 1;
+      padding: 9px 4px;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      min-width: 0;
+    }
+    .cal-legend {
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+    }
+
+    /* MONTH grid on mobile - keep 7 cols but shrink heavily */
+    .cal-dow-header {
+      font-size: 9px;
+      letter-spacing: 0.05em;
+      padding: 8px 2px;
+    }
+    .cal-day-cell {
+      min-height: 64px;
+      padding: 4px 3px;
+      gap: 2px;
+    }
+    .cal-day-num {
+      font-size: 10px;
+      margin-bottom: 0;
+    }
+    .cal-task-chip.month {
+      padding: 2px 4px 2px 5px;
+      border-left-width: 2px;
+      gap: 0;
+    }
+    .cal-task-chip.month .chip-job-name {
+      display: none; /* too cramped on mobile */
+    }
+    .cal-task-chip.month .chip-task-text {
+      font-size: 9px;
+      line-height: 1.2;
+    }
+    .cal-task-chip:not(.overflow)::after {
+      width: 4px;
+      height: 4px;
+      top: 2px;
+      right: 2px;
+    }
+    .cal-task-chip.overflow {
+      font-size: 8px;
+      padding: 0 2px;
+    }
+
+    /* WEEK VIEW — stack vertically on mobile */
+    .cal-week-grid {
+      display: flex;
+      flex-direction: column;
+      border-left: none;
+      border-top: none;
+    }
+    .cal-week-col {
+      min-height: auto;
+      border-right: none;
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: 70px 1fr;
+    }
+    .cal-week-col:last-child { border-bottom: none; }
+    .cal-week-header {
+      border-bottom: none;
+      border-right: 1px solid var(--line);
+      padding: 14px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    .cal-week-header .dow { margin-bottom: 2px; font-size: 9px; }
+    .cal-week-header .daynum { font-size: 24px; }
+    .cal-week-header.today { border-top: none; border-left: 3px solid var(--red); margin-top: 0; }
+    .cal-week-tasks {
+      padding: 10px;
+      gap: 6px;
+      min-height: 60px;
+    }
+    .cal-week-tasks .cal-task-chip {
+      font-size: 11px;
+      padding: 7px 10px;
+    }
+    .cal-week-tasks .cal-task-chip.week .chip-task { font-size: 11px; }
+    .cal-week-tasks .cal-task-chip.week .chip-job { font-size: 9px; }
+
+    /* DAY VIEW */
+    .cal-day-view { padding: 18px 14px 24px; }
+    .cal-day-header { gap: 14px; margin-bottom: 18px; padding-bottom: 14px; }
+    .cal-day-big { font-size: 56px; }
+    .cal-day-meta .dow-big { font-size: 18px; }
+    .cal-day-meta .month-big { font-size: 10px; }
+    .cal-day-meta .task-count { font-size: 10px; }
+    .cal-day-row {
+      grid-template-columns: auto 1fr;
+      grid-template-rows: auto auto;
+      gap: 8px 12px;
+      padding: 12px 14px;
+    }
+    .cal-day-row .row-check { grid-column: 1; grid-row: 1 / 3; align-self: start; margin-top: 3px; }
+    .cal-day-row .row-body { grid-column: 2; grid-row: 1; min-width: 0; }
+    .cal-day-row .prio-tag {
+      grid-column: 2;
+      grid-row: 2;
+      justify-self: start;
+    }
+    .cal-day-row .task-name { font-size: 13px; }
+    .cal-day-row .task-job { font-size: 9px; }
+
+    /* YEAR VIEW */
+    .cal-year-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 12px;
+    }
+    .cal-year-month { padding: 10px; }
+    .cal-year-title { font-size: 13px; margin-bottom: 8px; }
+    .cal-year-title .count { font-size: 9px; }
+    .cal-year-mini .mini-dow { font-size: 7px; padding: 1px 0; }
+    .cal-year-mini .mini-day { font-size: 9px; padding-bottom: 4px; }
+    .cal-year-mini .mini-jobdot { width: 2.5px; height: 2.5px; }
+
+    /* Color picker popover - keep on screen */
+    .color-picker-popover {
+      min-width: 200px;
+      max-width: calc(100vw - 24px);
+    }
+    .picker-swatches { grid-template-columns: repeat(6, 1fr); gap: 5px; }
+
+    /* Modal */
+    .modal {
+      max-width: calc(100vw - 24px);
+      margin: 0 12px;
+      padding: 22px;
+    }
+    .field input { font-size: 16px; /* prevents iOS zoom-on-focus */ }
+
+    /* iOS date/color inputs: explicitly set dark scheme */
+    input[type="date"], input[type="color"] { color-scheme: dark; }
+  }
+
+  /* Extra-small phones (iPhone SE, narrow) */
+  @media (max-width: 380px) {
+    .shell { padding: 10px; }
+    .metrics { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .metric { padding: 10px; }
+    .metric .value { font-size: 22px; }
+    .cal-day-cell { min-height: 54px; padding: 3px 2px; }
+    .cal-day-num { font-size: 9px; }
+    .cal-task-chip.month .chip-task-text { font-size: 8px; }
+    .cal-dow-header { font-size: 8px; padding: 6px 1px; }
+    .view-tab { padding: 7px 8px; font-size: 9px; }
+    .view-tab svg { display: none; } /* text only when very cramped */
+    .scale-btn { font-size: 9px; padding: 8px 2px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span id="brand-logo" class="brand-logo" aria-label="Miller Woodworking"></span>
+    <div class="brand-text">
+      <div class="title">MILLER WOODWORKING</div>
+      <div class="sub">// Operations Command · v2.6</div>
+    </div>
+  </div>
+
+  <nav class="view-tabs" id="view-tabs">
+    <button class="view-tab active" data-view="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+      Dashboard
+    </button>
+    <button class="view-tab" data-view="calendar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Calendar
+    </button>
+    <div class="status-item compact"><span class="dot red"></span><span id="overdue-flag">0</span> Overdue</div>
+  </nav>
+
+  <div class="clock">
+    <span><span class="label">DATE</span> <span id="date">----</span></span>
+    <span><span class="label">TIME</span> <span id="time">--:--:--</span></span>
+  </div>
+</header>
+
+<main class="shell">
+
+  <!-- =========================== DASHBOARD VIEW =========================== -->
+  <div class="view-panel active" data-view-panel="dashboard">
+
+  <!-- Metrics -->
+  <section class="metrics">
+    <div class="metric" data-accent="red">
+      <div class="label">Active Jobs <span class="code mono">// 01</span></div>
+      <div class="value" id="m-jobs">0</div>
+      <div class="sub">In production</div>
+    </div>
+    <div class="metric" data-accent="amber">
+      <div class="label">Open Tasks <span class="code mono">// 02</span></div>
+      <div class="value" id="m-open">0</div>
+      <div class="sub">Awaiting completion</div>
+    </div>
+    <div class="metric" data-accent="red">
+      <div class="label">Critical Priority <span class="code mono">// 03</span></div>
+      <div class="value" id="m-crit">0</div>
+      <div class="sub">Requires attention</div>
+    </div>
+    <div class="metric" data-accent="green">
+      <div class="label">Completed <span class="code mono">// 04</span></div>
+      <div class="value" id="m-done">0</div>
+      <div class="sub">Finished tasks</div>
+    </div>
+    <div class="metric" data-accent="blue">
+      <div class="label">Completion Rate <span class="code mono">// 05</span></div>
+      <div class="value" id="m-rate">0%</div>
+      <div class="sub">Overall progress</div>
+    </div>
+  </section>
+
+  <!-- Filters + actions -->
+  <section class="control-panel">
+    <div class="panel-label">Filter · Deadline</div>
+    <div class="filter-group" id="filter-group">
+      <button class="filter-btn active" data-filter="all">All <span class="count" id="c-all">0</span></button>
+      <button class="filter-btn" data-filter="overdue">Overdue <span class="count" id="c-overdue">0</span></button>
+      <button class="filter-btn" data-filter="today">Today <span class="count" id="c-today">0</span></button>
+      <button class="filter-btn" data-filter="week">This Week <span class="count" id="c-week">0</span></button>
+      <button class="filter-btn" data-filter="month">This Month <span class="count" id="c-month">0</span></button>
+      <button class="filter-btn" data-filter="nodate">No Deadline <span class="count" id="c-nodate">0</span></button>
+    </div>
+    <div class="control-actions">
+      <div class="layout-toggle" id="layout-toggle" title="Switch layout">
+        <button class="layout-btn active" data-layout="grid" title="Grid layout">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Grid
+        </button>
+        <button class="layout-btn" data-layout="focus" title="Focus layout">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="18"/><rect x="11" y="3" width="10" height="18"/></svg>
+          Focus
+        </button>
+      </div>
+      <button class="btn-ghost" id="btn-reset">
+        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+        Reset
+      </button>
+      <button class="btn-primary" id="btn-add-job">
+        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        New Job
+      </button>
+    </div>
+  </section>
+
+  <!-- Grid layout (original) -->
+  <section class="jobs-grid layout-panel active" id="jobs-grid" data-layout-panel="grid"></section>
+
+  <!-- Focus layout (sidebar + detail) -->
+  <section class="focus-layout layout-panel" data-layout-panel="focus">
+    <aside class="focus-sidebar" id="focus-sidebar"></aside>
+    <div class="focus-detail" id="focus-detail"></div>
+  </section>
+
+  </div><!-- /dashboard view panel -->
+
+  <!-- =========================== CALENDAR VIEW =========================== -->
+  <div class="view-panel" data-view-panel="calendar">
+
+    <section class="cal-control-panel">
+      <div class="cal-nav">
+        <button class="icon-btn" id="cal-prev" title="Previous">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="btn-ghost" id="cal-today">Today</button>
+        <button class="icon-btn" id="cal-next" title="Next">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <h2 class="cal-range-title" id="cal-range-title">—</h2>
+      </div>
+
+      <div class="cal-scale" id="cal-scale">
+        <button class="scale-btn" data-scale="day">Day</button>
+        <button class="scale-btn" data-scale="week">Week</button>
+        <button class="scale-btn active" data-scale="month">Month</button>
+        <button class="scale-btn" data-scale="year">Year</button>
+      </div>
+
+      <div class="cal-legend">
+        <span class="leg-item"><span class="leg-dot" style="background:var(--red)"></span>Critical</span>
+        <span class="leg-item"><span class="leg-dot" style="background:var(--amber)"></span>High</span>
+        <span class="leg-item"><span class="leg-dot" style="background:var(--blue)"></span>Medium</span>
+        <span class="leg-item"><span class="leg-dot" style="background:var(--ink-3)"></span>Low</span>
+      </div>
+    </section>
+
+    <section class="cal-body" id="cal-body"></section>
+
+  </div><!-- /calendar view panel -->
+
+  <div class="footer-tag">// END OF FEED · MILLER WOODWORKING CO. · EST. 1986</div>
+</main>
+
+<!-- New Job Modal -->
+<div class="modal-backdrop" id="modal-job">
+  <div class="modal">
+    <h3>New Job Order</h3>
+    <div class="modal-sub">// Initialize production record</div>
+    <div class="field">
+      <label>Job Number</label>
+      <input type="text" id="new-job-code" placeholder="e.g. 2025-014, MW-0412, or whatever you use" maxlength="40" />
+    </div>
+    <div class="field">
+      <label>Project Name</label>
+      <input type="text" id="new-job-name" placeholder="e.g. Ashford Residence Built-Ins" />
+    </div>
+    <div class="field">
+      <label>Client</label>
+      <input type="text" id="new-job-client" placeholder="e.g. Ashford Family" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="job-cancel">Cancel</button>
+      <button class="btn-primary" id="job-save">Create Job</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ========= LOGO =========
+  // Inline SVG logo - drawn as vector so it scales cleanly and can inherit text color.
+  document.getElementById('brand-logo').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 120" preserveAspectRatio="xMidYMid meet"><g transform="translate(130, 30)"><line x1="0" y1="-30" x2="0" y2="30" stroke="currentColor" stroke-width="2.5"/><line x1="-30" y1="0" x2="30" y2="0" stroke="currentColor" stroke-width="2.5"/><g fill="none" stroke="#e63946" stroke-width="6"><path d="M -14.5 -4 A 15 15 0 0 1 -4 -14.5"/><path d="M 4 -14.5 A 15 15 0 0 1 14.5 -4"/><path d="M 14.5 4 A 15 15 0 0 1 4 14.5"/><path d="M -4 14.5 A 15 15 0 0 1 -14.5 4"/></g><circle cx="0" cy="0" r="3.5" fill="#e63946"/></g><text x="130" y="100" text-anchor="middle" font-family="Oswald, Impact, sans-serif" font-weight="700" font-size="44" letter-spacing="4" fill="currentColor">MILLER</text></svg>`;
+
+  // ========= STATE =========
+  const STORAGE_KEY = 'miller_ww_dashboard_v1';
+
+  function todayStr() {
+    const d = new Date();
+    return d.toISOString().slice(0, 10);
+  }
+
+  function addDaysStr(days) {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+  }
+
+  const SAMPLE_JOBS = [
+    {
+      id: 'job_' + Date.now() + '_1',
+      name: 'Ashford Residence Built-Ins',
+      client: 'Ashford Family',
+      code: 'MW-0412',
+      color: '#d97706',
+      tasks: [
+        { id: 't1', text: 'Finalize walnut cabinet shop drawings', priority: 'critical', deadline: addDaysStr(-1), done: false },
+        { id: 't2', text: 'Order brass hardware from supplier', priority: 'high', deadline: addDaysStr(2), done: false },
+        { id: 't3', text: 'Mill rough stock · 8/4 walnut', priority: 'medium', deadline: addDaysStr(5), done: false },
+        { id: 't4', text: 'Client walk-through scheduled', priority: 'low', deadline: addDaysStr(18), done: true },
+      ]
+    },
+    {
+      id: 'job_' + Date.now() + '_2',
+      name: 'Brewhouse Bar Top',
+      client: 'North Fork Brewing Co.',
+      code: 'MW-0413',
+      color: '#0891b2',
+      tasks: [
+        { id: 't5', text: 'Epoxy pour on live-edge slab', priority: 'critical', deadline: todayStr(), done: false },
+        { id: 't6', text: 'Sand and level underside', priority: 'high', deadline: addDaysStr(3), done: false },
+        { id: 't7', text: 'Install steel mounting brackets', priority: 'medium', deadline: addDaysStr(7), done: false },
+      ]
+    },
+    {
+      id: 'job_' + Date.now() + '_3',
+      name: 'Henley Kitchen Remodel',
+      client: 'B. Henley',
+      code: 'MW-0414',
+      color: '#16a34a',
+      tasks: [
+        { id: 't8', text: 'Template countertops onsite', priority: 'high', deadline: addDaysStr(1), done: false },
+        { id: 't9', text: 'Confirm appliance cutout specs', priority: 'medium', deadline: addDaysStr(4), done: false },
+        { id: 't10', text: 'Select final stain sample', priority: 'low', deadline: '', done: false },
+      ]
+    }
+  ];
+
+  let state = load();
+  let currentFilter = 'all';
+  let jobCounter = state.jobs.length;
+
+  // Curated palette for job color coding - distinct on dark bg, avoids the priority reds/ambers
+  const JOB_PALETTE = [
+    '#d97706', // amber-600 (warm orange)
+    '#0891b2', // cyan-600
+    '#16a34a', // green-600
+    '#8b5cf6', // violet-500
+    '#db2777', // pink-600
+    '#0284c7', // sky-600
+    '#ca8a04', // yellow-600
+    '#059669', // emerald-600
+    '#c026d3', // fuchsia-600
+    '#2563eb', // blue-600
+    '#65a30d', // lime-600
+    '#e11d48', // rose-600
+  ];
+
+  function pickNextColor() {
+    const used = new Set(state.jobs.map(j => j.color).filter(Boolean));
+    // First try an unused palette color
+    const fresh = JOB_PALETTE.find(c => !used.has(c));
+    if (fresh) return fresh;
+    // All used - cycle by job count
+    return JOB_PALETTE[state.jobs.length % JOB_PALETTE.length];
+  }
+
+  // Backfill colors for any job missing one (e.g. saved data from before this feature)
+  state.jobs.forEach((job, i) => {
+    if (!job.color) job.color = JOB_PALETTE[i % JOB_PALETTE.length];
+  });
+  save();
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch(e){}
+    return { jobs: SAMPLE_JOBS };
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch(e){}
+  }
+
+  // ========= UTILS =========
+  function fmtDate(iso) {
+    if (!iso) return 'No deadline';
+    const d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+  }
+
+  function daysFromNow(iso) {
+    if (!iso) return null;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const d = new Date(iso + 'T00:00:00');
+    return Math.round((d - today) / 86400000);
+  }
+
+  function deadlineClass(iso) {
+    const d = daysFromNow(iso);
+    if (d === null) return '';
+    if (d < 0) return 'overdue';
+    if (d <= 2) return 'soon';
+    return '';
+  }
+
+  function deadlineLabel(iso) {
+    const d = daysFromNow(iso);
+    if (d === null) return '—';
+    if (d < 0) return `${Math.abs(d)}d OVERDUE`;
+    if (d === 0) return 'TODAY';
+    if (d === 1) return 'TOMORROW';
+    if (d <= 7) return `+${d}d`;
+    return fmtDate(iso);
+  }
+
+  function matchesFilter(task, filter) {
+    if (filter === 'all') return true;
+    const d = daysFromNow(task.deadline);
+    if (filter === 'nodate') return d === null;
+    if (d === null) return false;
+    if (filter === 'overdue') return d < 0 && !task.done;
+    if (filter === 'today') return d === 0;
+    if (filter === 'week') return d >= 0 && d <= 7;
+    if (filter === 'month') return d >= 0 && d <= 30;
+    return true;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  function genCode() {
+    jobCounter += 1;
+    return 'MW-' + String(412 + jobCounter).padStart(4, '0');
+  }
+
+  // ========= RENDER =========
+  const grid = document.getElementById('jobs-grid');
+  const focusSidebar = document.getElementById('focus-sidebar');
+  const focusDetail = document.getElementById('focus-detail');
+  const focusLayoutEl = document.querySelector('[data-layout-panel="focus"]');
+
+  const LAYOUT_KEY = 'miller_ww_layout_v1';
+  let currentLayout = localStorage.getItem(LAYOUT_KEY) || 'grid';
+  let selectedJobId = null; // for focus mode
+
+  // Build HTML for a single job card (used by both layouts)
+  function jobCardHtml(job) {
+    const visibleTasks = job.tasks.filter(t => matchesFilter(t, currentFilter));
+    const total = job.tasks.length;
+    const done = job.tasks.filter(t => t.done).length;
+    const pct = total ? Math.round((done/total) * 100) : 0;
+
+    return `
+      <div class="job-color-bar"></div>
+      <div class="job-header">
+        <div class="job-meta">
+          <span class="job-code mono" contenteditable="true" data-field="code">${escapeHtml(job.code)}</span>
+          <div class="job-title" contenteditable="true" data-field="name">${escapeHtml(job.name)}</div>
+          <div class="job-client" contenteditable="true" data-field="client">${escapeHtml(job.client || 'No client')}</div>
+        </div>
+        <div class="job-actions">
+          <button class="icon-btn color-swatch-btn" data-action="open-color" title="Change color" style="background:${job.color}; border-color:${job.color};"></button>
+          <button class="icon-btn danger" data-action="delete-job" title="Delete job">
+            <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="job-stats">
+        <span class="stat-pill"><strong>${done}</strong>/${total} tasks</span>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%; background: linear-gradient(90deg, ${job.color}, ${job.color}cc);"></div></div>
+        <span class="stat-pill mono"><strong>${pct}%</strong></span>
+      </div>
+
+      <div class="tasks-list">
+        ${visibleTasks.length === 0
+          ? `<div class="task-empty">${total === 0 ? '// NO TASKS · ADD ONE BELOW' : '// NO TASKS MATCH FILTER'}</div>`
+          : visibleTasks.map(t => renderTask(t)).join('')}
+      </div>
+
+      <form class="add-task-form" data-action="add-task">
+        <input type="text" name="text" placeholder="New task..." required maxlength="140" />
+        <select name="priority">
+          <option value="low">LOW</option>
+          <option value="medium" selected>MEDIUM</option>
+          <option value="high">HIGH</option>
+          <option value="critical">CRITICAL</option>
+        </select>
+        <input type="date" name="deadline" />
+        <button type="submit" class="add-btn" title="Add task">+</button>
+      </form>
+    `;
+  }
+
+  function render() {
+    if (currentLayout === 'grid') {
+      renderGrid();
+    } else {
+      renderFocus();
+    }
+    updateMetrics();
+    updateFilterCounts();
+  }
+
+  function renderGrid() {
+    grid.innerHTML = '';
+    state.jobs.forEach(job => {
+      const card = document.createElement('div');
+      card.className = 'job-card';
+      card.dataset.jobId = job.id;
+      card.style.setProperty('--job-color', job.color);
+      card.innerHTML = jobCardHtml(job);
+      grid.appendChild(card);
+    });
+
+    // "Add Job" card at end
+    const addCard = document.createElement('div');
+    addCard.className = 'add-job-card';
+    addCard.innerHTML = `<div class="plus">+</div><div class="text">// New Job Order</div>`;
+    addCard.addEventListener('click', openJobModal);
+    grid.appendChild(addCard);
+  }
+
+  function renderFocus() {
+    // Sidebar list
+    const jobCount = state.jobs.length;
+    let sidebarHtml = `
+      <div class="focus-sidebar-header">
+        <span>// Jobs</span>
+        <span class="job-total">${jobCount}</span>
+      </div>
+    `;
+
+    if (jobCount === 0) {
+      sidebarHtml += `<div class="focus-sidebar-empty">// No jobs yet</div>`;
+    } else {
+      sidebarHtml += '<div class="focus-jobs-list">';
+      state.jobs.forEach(job => {
+        const total = job.tasks.length;
+        const done = job.tasks.filter(t => t.done).length;
+        const isSelected = selectedJobId === job.id;
+        sidebarHtml += `
+          <div class="focus-job-item ${isSelected ? 'selected' : ''}" data-job-id="${job.id}" style="--job-color:${job.color};">
+            <div class="focus-job-swatch"></div>
+            <div class="job-info">
+              <div class="name">${escapeHtml(job.name)}</div>
+              <div class="meta"><span class="done">${done}</span>/${total} tasks</div>
+            </div>
+            <div class="chev">›</div>
+          </div>
+        `;
+      });
+      sidebarHtml += '</div>';
+    }
+
+    sidebarHtml += `
+      <div class="focus-sidebar-add">
+        <button class="focus-add-btn" id="focus-add-btn">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          New Job
+        </button>
+      </div>
+    `;
+    focusSidebar.innerHTML = sidebarHtml;
+
+    // Detail pane
+    // If selected job no longer exists (e.g. deleted), reset selection
+    if (selectedJobId && !state.jobs.find(j => j.id === selectedJobId)) {
+      selectedJobId = null;
+    }
+
+    const selectedJob = state.jobs.find(j => j.id === selectedJobId);
+    if (!selectedJob) {
+      focusDetail.innerHTML = `
+        <div class="focus-welcome">
+          <div class="focus-welcome-icon">
+            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--ink-2);">
+              <circle cx="24" cy="18" r="8"/>
+              <line x1="24" y1="2" x2="24" y2="34"/>
+              <line x1="8" y1="18" x2="40" y2="18"/>
+              <circle cx="24" cy="18" r="2" fill="currentColor"/>
+            </svg>
+          </div>
+          <div class="focus-welcome-title">Select a Job to Begin</div>
+          <div class="focus-welcome-sub">Choose a project from the sidebar to view its tasks, deadlines, and status.</div>
+          ${jobCount > 0 ? `<div class="focus-welcome-hint"><span class="arrow">←</span> Pick one from the list</div>` : `<div class="focus-welcome-hint">Create your first job to get started</div>`}
+        </div>
+      `;
+      focusLayoutEl.classList.remove('detail-open');
+    } else {
+      // Reuse the same job card HTML for the detail pane
+      focusDetail.innerHTML = `
+        <button class="focus-back-btn" id="focus-back-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          Back to Jobs
+        </button>
+        <div class="job-card" data-job-id="${selectedJob.id}" style="--job-color:${selectedJob.color};">
+          ${jobCardHtml(selectedJob)}
+        </div>
+      `;
+      focusLayoutEl.classList.add('detail-open');
+    }
+  }
+
+  function renderTask(t) {
+    const dClass = deadlineClass(t.deadline);
+    return `
+      <div class="task ${t.done ? 'done' : ''}" data-task-id="${t.id}" data-priority="${t.priority}">
+        <div class="task-check" data-action="toggle"></div>
+        <div class="task-text" contenteditable="true" data-action="edit-text">${escapeHtml(t.text)}</div>
+        <div class="task-priority-tag" data-action="cycle-priority" title="Click to cycle priority">${t.priority.toUpperCase()}</div>
+        <div class="task-deadline ${dClass}" data-action="edit-deadline" title="${fmtDate(t.deadline)}">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+          </svg>
+          ${deadlineLabel(t.deadline)}
+        </div>
+        <button class="task-del" data-action="delete-task" title="Delete task">×</button>
+      </div>
+    `;
+  }
+
+  function updateMetrics() {
+    const allTasks = state.jobs.flatMap(j => j.tasks);
+    const open = allTasks.filter(t => !t.done);
+    const crit = open.filter(t => t.priority === 'critical').length;
+    const done = allTasks.filter(t => t.done).length;
+    const rate = allTasks.length ? Math.round((done/allTasks.length)*100) : 0;
+    const overdue = open.filter(t => {
+      const d = daysFromNow(t.deadline);
+      return d !== null && d < 0;
+    }).length;
+
+    document.getElementById('m-jobs').textContent = state.jobs.length;
+    document.getElementById('m-open').textContent = open.length;
+    document.getElementById('m-crit').textContent = crit;
+    document.getElementById('m-done').textContent = done;
+    document.getElementById('m-rate').textContent = rate + '%';
+    document.getElementById('overdue-flag').textContent = overdue;
+  }
+
+  function updateFilterCounts() {
+    const allTasks = state.jobs.flatMap(j => j.tasks);
+    const filters = ['all','overdue','today','week','month','nodate'];
+    filters.forEach(f => {
+      const n = allTasks.filter(t => matchesFilter(t, f)).length;
+      const el = document.getElementById('c-' + f);
+      if (el) el.textContent = n;
+    });
+  }
+
+  // ========= EVENT DELEGATION =========
+  // Attach to the dashboard view panel so handlers work for both grid and focus layouts
+  const jobAreaEl = document.querySelector('[data-view-panel="dashboard"]');
+
+  jobAreaEl.addEventListener('click', e => {
+    const card = e.target.closest('.job-card');
+    if (!card) return;
+    const jobId = card.dataset.jobId;
+    const job = state.jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    const action = e.target.closest('[data-action]')?.dataset.action;
+    if (!action) return;
+
+    if (action === 'delete-job') {
+      if (confirm(`Delete job "${job.name}"? This cannot be undone.`)) {
+        state.jobs = state.jobs.filter(j => j.id !== jobId);
+        save(); render();
+      }
+      return;
+    }
+
+    if (action === 'open-color') {
+      openColorPicker(e.target.closest('.color-swatch-btn'), job);
+      return;
+    }
+
+    const taskEl = e.target.closest('.task');
+    if (!taskEl) return;
+    const taskId = taskEl.dataset.taskId;
+    const task = job.tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    if (action === 'toggle') {
+      task.done = !task.done;
+      save(); render();
+    } else if (action === 'delete-task') {
+      job.tasks = job.tasks.filter(t => t.id !== taskId);
+      save(); render();
+    } else if (action === 'cycle-priority') {
+      const order = ['low','medium','high','critical'];
+      task.priority = order[(order.indexOf(task.priority) + 1) % order.length];
+      save(); render();
+    } else if (action === 'edit-deadline') {
+      const input = document.createElement('input');
+      input.type = 'date';
+      input.value = task.deadline || '';
+      input.style.cssText = 'font-family:JetBrains Mono,monospace;background:var(--bg-1);color:var(--ink-0);border:1px solid var(--red);padding:2px 4px;color-scheme:dark;font-size:11px;';
+      const parent = e.target.closest('.task-deadline');
+      parent.innerHTML = '';
+      parent.appendChild(input);
+      input.focus();
+      input.showPicker && input.showPicker();
+      input.addEventListener('blur', () => {
+        task.deadline = input.value;
+        save(); render();
+      });
+      input.addEventListener('change', () => {
+        task.deadline = input.value;
+        save(); render();
+      });
+    }
+  });
+
+  // inline edit commits
+  jobAreaEl.addEventListener('blur', e => {
+    const card = e.target.closest('.job-card');
+    if (!card) return;
+    const jobId = card.dataset.jobId;
+    const job = state.jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    if (e.target.classList.contains('job-title')) {
+      job.name = e.target.textContent.trim() || 'Untitled Job';
+      save();
+    } else if (e.target.classList.contains('job-client')) {
+      job.client = e.target.textContent.trim();
+      save();
+    } else if (e.target.classList.contains('job-code')) {
+      job.code = e.target.textContent.trim() || 'NO-CODE';
+      save();
+      render();  // re-render so sidebar/calendar reflect the new code
+    } else if (e.target.classList.contains('task-text')) {
+      const taskId = e.target.closest('.task').dataset.taskId;
+      const task = job.tasks.find(t => t.id === taskId);
+      if (task) {
+        task.text = e.target.textContent.trim() || 'Untitled task';
+        save();
+      }
+    }
+  }, true);
+
+  jobAreaEl.addEventListener('keydown', e => {
+    if (e.target.hasAttribute('contenteditable') && e.key === 'Enter') {
+      e.preventDefault();
+      e.target.blur();
+    }
+  });
+
+  jobAreaEl.addEventListener('submit', e => {
+    if (e.target.matches('[data-action="add-task"]')) {
+      e.preventDefault();
+      const card = e.target.closest('.job-card');
+      const job = state.jobs.find(j => j.id === card.dataset.jobId);
+      if (!job) return;
+      const fd = new FormData(e.target);
+      const text = (fd.get('text') || '').trim();
+      if (!text) return;
+      job.tasks.push({
+        id: 't_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+        text,
+        priority: fd.get('priority') || 'medium',
+        deadline: fd.get('deadline') || '',
+        done: false
+      });
+      save(); render();
+    }
+  });
+
+  // ========= FILTERS =========
+  document.getElementById('filter-group').addEventListener('click', e => {
+    const btn = e.target.closest('.filter-btn');
+    if (!btn) return;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    render();
+  });
+
+  // ========= LAYOUT TOGGLE =========
+  function applyLayout(layout) {
+    currentLayout = layout;
+    localStorage.setItem(LAYOUT_KEY, layout);
+
+    // Update layout toggle buttons
+    document.querySelectorAll('.layout-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.layout === layout);
+    });
+
+    // Show the right layout panel
+    document.querySelectorAll('.layout-panel').forEach(p => {
+      p.classList.toggle('active', p.dataset.layoutPanel === layout);
+    });
+
+    render();
+  }
+
+  document.getElementById('layout-toggle').addEventListener('click', e => {
+    const btn = e.target.closest('.layout-btn');
+    if (!btn) return;
+    const target = btn.dataset.layout;
+    if (target === currentLayout) return;
+    applyLayout(target);
+  });
+
+  // Sidebar clicks — select job, or add new job
+  focusSidebar.addEventListener('click', e => {
+    // New job button
+    if (e.target.closest('#focus-add-btn')) {
+      openJobModal();
+      return;
+    }
+    // Job selection
+    const item = e.target.closest('.focus-job-item');
+    if (item) {
+      selectedJobId = item.dataset.jobId;
+      renderFocus();
+    }
+  });
+
+  // Mobile back button (delegated since it's in dynamic content)
+  focusDetail.addEventListener('click', e => {
+    if (e.target.closest('#focus-back-btn')) {
+      selectedJobId = null;
+      renderFocus();
+    }
+  });
+
+  // ========= NEW JOB MODAL =========
+  const modal = document.getElementById('modal-job');
+  function openJobModal() {
+    modal.classList.add('open');
+    document.getElementById('new-job-code').value = '';
+    document.getElementById('new-job-name').value = '';
+    document.getElementById('new-job-client').value = '';
+    setTimeout(() => document.getElementById('new-job-code').focus(), 50);
+  }
+  function closeJobModal() { modal.classList.remove('open'); }
+
+  document.getElementById('btn-add-job').addEventListener('click', openJobModal);
+  document.getElementById('job-cancel').addEventListener('click', closeJobModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeJobModal(); });
+
+  document.getElementById('job-save').addEventListener('click', () => {
+    const code = document.getElementById('new-job-code').value.trim();
+    const name = document.getElementById('new-job-name').value.trim();
+    const client = document.getElementById('new-job-client').value.trim();
+    if (!code) { alert('Job number required.'); return; }
+    if (!name) { alert('Project name required.'); return; }
+    state.jobs.push({
+      id: 'job_' + Date.now(),
+      name,
+      client,
+      code,
+      color: pickNextColor(),
+      tasks: []
+    });
+    save(); closeJobModal(); render();
+  });
+
+  // ========= RESET =========
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    if (confirm('Reset dashboard to sample data? All current jobs and tasks will be lost.')) {
+      localStorage.removeItem(STORAGE_KEY);
+      state = load();
+      jobCounter = state.jobs.length;
+      render();
+    }
+  });
+
+  // ========= CLOCK =========
+  function tick() {
+    const now = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    const date = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())}`;
+    const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    const dateEl = document.getElementById('date');
+    const timeEl = document.getElementById('time');
+    const syncEl = document.getElementById('sync-time');
+    if (dateEl) dateEl.textContent = date;
+    if (timeEl) timeEl.textContent = time;
+    if (syncEl) syncEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  }
+  tick(); setInterval(tick, 1000);
+
+  // ========= COLOR PICKER =========
+  function openColorPicker(anchor, job) {
+    // Remove any existing picker
+    document.querySelectorAll('.color-picker-popover').forEach(p => p.remove());
+
+    const pop = document.createElement('div');
+    pop.className = 'color-picker-popover';
+    pop.innerHTML = `
+      <div class="picker-label">// JOB COLOR</div>
+      <div class="picker-swatches">
+        ${JOB_PALETTE.map(c => `
+          <button class="picker-swatch ${c === job.color ? 'active' : ''}" style="background:${c}" data-color="${c}" title="${c}"></button>
+        `).join('')}
+      </div>
+      <label class="picker-custom">
+        <span>Custom</span>
+        <input type="color" value="${job.color}" />
+      </label>
+    `;
+    document.body.appendChild(pop);
+
+    // Position below anchor
+    const rect = anchor.getBoundingClientRect();
+    const popRect = pop.getBoundingClientRect();
+    let left = rect.right - popRect.width;
+    if (left < 12) left = 12;
+    if (left + popRect.width > window.innerWidth - 12) left = window.innerWidth - popRect.width - 12;
+    pop.style.left = left + 'px';
+    pop.style.top = (rect.bottom + window.scrollY + 8) + 'px';
+
+    // Swatch click
+    pop.addEventListener('click', e => {
+      const sw = e.target.closest('.picker-swatch');
+      if (sw) {
+        job.color = sw.dataset.color;
+        save(); pop.remove(); render();
+      }
+    });
+    // Custom color input
+    pop.querySelector('input[type="color"]').addEventListener('change', e => {
+      job.color = e.target.value;
+      save(); pop.remove(); render();
+    });
+
+    // Dismiss on outside click
+    const dismiss = (ev) => {
+      if (!pop.contains(ev.target) && ev.target !== anchor) {
+        pop.remove();
+        document.removeEventListener('click', dismiss, true);
+      }
+    };
+    setTimeout(() => document.addEventListener('click', dismiss, true), 0);
+  }
+
+  // ========= VIEW SWITCHING =========
+  const viewTabs = document.getElementById('view-tabs');
+  const viewPanels = document.querySelectorAll('[data-view-panel]');
+  let currentView = 'dashboard';
+
+  viewTabs.addEventListener('click', e => {
+    const tab = e.target.closest('.view-tab');
+    if (!tab) return;
+    const target = tab.dataset.view;
+    if (target === currentView) return;
+
+    document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('active', t.dataset.view === target));
+    viewPanels.forEach(p => p.classList.toggle('active', p.dataset.viewPanel === target));
+    currentView = target;
+
+    if (target === 'calendar') renderCalendar();
+  });
+
+  // ========= CALENDAR =========
+  const calBody = document.getElementById('cal-body');
+  const calTitle = document.getElementById('cal-range-title');
+  const calScale = document.getElementById('cal-scale');
+  let calScaleMode = 'month';
+  let calAnchor = new Date(); // the reference date for the current view
+  calAnchor.setHours(0,0,0,0);
+
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const MONTH_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const DOW_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const DOW_SHORT = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const DOW_MINI = ['S','M','T','W','T','F','S'];
+
+  function startOfWeek(d) {
+    const x = new Date(d); x.setHours(0,0,0,0);
+    x.setDate(x.getDate() - x.getDay());
+    return x;
+  }
+  function isoDate(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${dd}`;
+  }
+  function sameDay(a, b) {
+    return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+  }
+
+  // Build a map: isoDate -> array of {task, job}
+  function buildTaskMap() {
+    const map = new Map();
+    state.jobs.forEach(job => {
+      job.tasks.forEach(task => {
+        if (!task.deadline) return;
+        if (!map.has(task.deadline)) map.set(task.deadline, []);
+        map.get(task.deadline).push({ task, job });
+      });
+    });
+    // sort each day by priority weight, then job name
+    const prioWeight = { critical: 0, high: 1, medium: 2, low: 3 };
+    map.forEach(arr => arr.sort((a, b) => {
+      const pa = prioWeight[a.task.priority] ?? 9;
+      const pb = prioWeight[b.task.priority] ?? 9;
+      if (pa !== pb) return pa - pb;
+      return a.job.name.localeCompare(b.job.name);
+    }));
+    return map;
+  }
+
+  calScale.addEventListener('click', e => {
+    const btn = e.target.closest('.scale-btn');
+    if (!btn) return;
+    calScaleMode = btn.dataset.scale;
+    document.querySelectorAll('.scale-btn').forEach(b => b.classList.toggle('active', b.dataset.scale === calScaleMode));
+    renderCalendar();
+  });
+
+  document.getElementById('cal-prev').addEventListener('click', () => {
+    stepCalendar(-1);
+  });
+  document.getElementById('cal-next').addEventListener('click', () => {
+    stepCalendar(1);
+  });
+  document.getElementById('cal-today').addEventListener('click', () => {
+    calAnchor = new Date(); calAnchor.setHours(0,0,0,0);
+    renderCalendar();
+  });
+
+  function stepCalendar(dir) {
+    const d = new Date(calAnchor);
+    if (calScaleMode === 'day')   d.setDate(d.getDate() + dir);
+    if (calScaleMode === 'week')  d.setDate(d.getDate() + dir * 7);
+    if (calScaleMode === 'month') d.setMonth(d.getMonth() + dir);
+    if (calScaleMode === 'year')  d.setFullYear(d.getFullYear() + dir);
+    calAnchor = d;
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    if (calScaleMode === 'day') renderCalDay();
+    else if (calScaleMode === 'week') renderCalWeek();
+    else if (calScaleMode === 'month') renderCalMonth();
+    else renderCalYear();
+  }
+
+  // ----- DAY VIEW -----
+  function renderCalDay() {
+    const d = calAnchor;
+    calTitle.textContent = `${MONTH_SHORT[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+
+    const iso = isoDate(d);
+    const map = buildTaskMap();
+    const items = map.get(iso) || [];
+    const today = new Date(); today.setHours(0,0,0,0);
+    const isToday = sameDay(d, today);
+
+    const rows = items.map(({task, job}) => `
+      <div class="cal-day-row ${task.done ? 'done' : ''}" data-priority="${task.priority}" data-task-id="${task.id}" data-job-id="${job.id}" style="--job-color: ${job.color};">
+        <div class="row-check" data-action="cal-toggle"></div>
+        <div class="row-body">
+          <div class="task-name">${escapeHtml(task.text)}</div>
+          <div class="task-job"><span class="job-dot" style="background:${job.color}"></span>${escapeHtml(job.code)} · ${escapeHtml(job.name)}</div>
+        </div>
+        <div class="prio-tag">${task.priority.toUpperCase()}</div>
+      </div>
+    `).join('');
+
+    calBody.innerHTML = `
+      <div class="cal-day-view">
+        <div class="cal-day-header">
+          <div class="cal-day-big" style="${isToday ? 'color: var(--red);' : ''}">${d.getDate()}</div>
+          <div class="cal-day-meta">
+            <div class="dow-big">${DOW_FULL[d.getDay()]}</div>
+            <div class="month-big">${MONTH_NAMES[d.getMonth()]} · ${d.getFullYear()}</div>
+            <div class="task-count">${items.length} task${items.length === 1 ? '' : 's'}${isToday ? ' · Today' : ''}</div>
+          </div>
+        </div>
+        ${items.length === 0
+          ? `<div class="cal-empty">// NO TASKS SCHEDULED</div>`
+          : `<div class="cal-day-list">${rows}</div>`}
+      </div>
+    `;
+  }
+
+  // ----- WEEK VIEW -----
+  function renderCalWeek() {
+    const start = startOfWeek(calAnchor);
+    const end = new Date(start); end.setDate(end.getDate() + 6);
+    const sameMonth = start.getMonth() === end.getMonth();
+    calTitle.textContent = sameMonth
+      ? `${MONTH_SHORT[start.getMonth()]} ${start.getDate()}–${end.getDate()}, ${start.getFullYear()}`
+      : `${MONTH_SHORT[start.getMonth()]} ${start.getDate()} – ${MONTH_SHORT[end.getMonth()]} ${end.getDate()}, ${end.getFullYear()}`;
+
+    const map = buildTaskMap();
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    let html = '<div class="cal-week-grid">';
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start); d.setDate(start.getDate() + i);
+      const iso = isoDate(d);
+      const items = map.get(iso) || [];
+      const isToday = sameDay(d, today);
+      html += `
+        <div class="cal-week-col">
+          <div class="cal-week-header ${isToday ? 'today' : ''}">
+            <span class="dow">${DOW_SHORT[d.getDay()]}</span>
+            <span class="daynum">${d.getDate()}</span>
+          </div>
+          <div class="cal-week-tasks">
+            ${items.length === 0
+              ? '<div class="cal-week-empty">// Empty</div>'
+              : items.map(({task, job}) => `
+                <div class="cal-task-chip week ${task.done ? 'done' : ''}" data-priority="${task.priority}" data-task-id="${task.id}" data-job-id="${job.id}" style="--job-color:${job.color};" title="${escapeHtml(job.name)} · ${escapeHtml(task.text)}">
+                  <div class="chip-task">${escapeHtml(task.text)}</div>
+                  <div class="chip-job"><span class="job-dot" style="background:${job.color}"></span>${escapeHtml(job.name)}</div>
+                </div>
+              `).join('')}
+          </div>
+        </div>
+      `;
+    }
+    html += '</div>';
+    calBody.innerHTML = html;
+  }
+
+  // ----- MONTH VIEW -----
+  function renderCalMonth() {
+    const d = new Date(calAnchor);
+    d.setDate(1);
+    calTitle.textContent = `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+
+    const firstDow = d.getDay();
+    const gridStart = new Date(d);
+    gridStart.setDate(1 - firstDow);
+
+    const map = buildTaskMap();
+    const today = new Date(); today.setHours(0,0,0,0);
+    const curMonth = d.getMonth();
+
+    let html = '<div class="cal-month-grid">';
+    for (let i = 0; i < 7; i++) {
+      html += `<div class="cal-dow-header">${DOW_SHORT[i]}</div>`;
+    }
+    for (let i = 0; i < 42; i++) {
+      const cell = new Date(gridStart);
+      cell.setDate(gridStart.getDate() + i);
+      const iso = isoDate(cell);
+      const items = map.get(iso) || [];
+      const otherMonth = cell.getMonth() !== curMonth;
+      const isToday = sameDay(cell, today);
+      const maxShow = 3;
+      const shown = items.slice(0, maxShow);
+      const extra = items.length - shown.length;
+
+      html += `
+        <div class="cal-day-cell ${otherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}" data-date="${iso}">
+          <div class="cal-day-num">${cell.getDate()}</div>
+          ${shown.map(({task, job}) => `
+            <div class="cal-task-chip month ${task.done ? 'done' : ''}" data-priority="${task.priority}" data-task-id="${task.id}" data-job-id="${job.id}" style="--job-color:${job.color};" title="${escapeHtml(job.name)} · ${escapeHtml(task.text)}">
+              <span class="chip-job-name">${escapeHtml(job.name)}</span>
+              <span class="chip-task-text">${escapeHtml(task.text)}</span>
+            </div>
+          `).join('')}
+          ${extra > 0 ? `<div class="cal-task-chip overflow" data-action="drill-day" data-date="${iso}">+ ${extra} more</div>` : ''}
+        </div>
+      `;
+    }
+    html += '</div>';
+    calBody.innerHTML = html;
+  }
+
+  // ----- YEAR VIEW -----
+  function renderCalYear() {
+    const year = calAnchor.getFullYear();
+    calTitle.textContent = String(year);
+
+    const map = buildTaskMap();
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    let html = '<div class="cal-year-grid">';;
+    for (let m = 0; m < 12; m++) {
+      const first = new Date(year, m, 1);
+      const firstDow = first.getDay();
+      const gridStart = new Date(first);
+      gridStart.setDate(1 - firstDow);
+
+      // count tasks in this month
+      let monthCount = 0;
+      let miniCells = '';
+      for (let i = 0; i < 7; i++) {
+        miniCells += `<div class="mini-dow">${DOW_MINI[i]}</div>`;
+      }
+      for (let i = 0; i < 42; i++) {
+        const cell = new Date(gridStart);
+        cell.setDate(gridStart.getDate() + i);
+        const iso = isoDate(cell);
+        const otherMonth = cell.getMonth() !== m;
+        const isToday = sameDay(cell, today);
+        const items = map.get(iso) || [];
+        const open = items.filter(x => !x.task.done);
+        if (!otherMonth) monthCount += items.length;
+        const has = !otherMonth && open.length > 0;
+        // Gather up to 3 unique job colors for the day
+        let dotsHtml = '';
+        if (has) {
+          const seen = new Set();
+          const jobColors = [];
+          for (const x of open) {
+            if (!seen.has(x.job.color)) { seen.add(x.job.color); jobColors.push(x.job.color); }
+            if (jobColors.length >= 3) break;
+          }
+          dotsHtml = jobColors.map(c => `<span class="mini-jobdot" style="background:${c}"></span>`).join('');
+        }
+        miniCells += `<div class="mini-day ${otherMonth ? 'other' : ''} ${isToday ? 'today' : ''} ${has ? 'has-tasks' : ''}">${cell.getDate()}${dotsHtml ? `<span class="mini-dots">${dotsHtml}</span>` : ''}</div>`;
+      }
+
+      const isCurMonth = today.getFullYear() === year && today.getMonth() === m;
+      html += `
+        <div class="cal-year-month ${isCurMonth ? 'current' : ''}" data-action="drill-month" data-month="${m}" data-year="${year}">
+          <div class="cal-year-title">
+            ${MONTH_NAMES[m]}
+            <span class="count">${monthCount} task${monthCount === 1 ? '' : 's'}</span>
+          </div>
+          <div class="cal-year-mini">${miniCells}</div>
+        </div>
+      `;
+    }
+    html += '</div>';
+    calBody.innerHTML = html;
+  }
+
+  // ----- CALENDAR EVENT DELEGATION -----
+  calBody.addEventListener('click', e => {
+    // drill from year → month
+    const monthDrill = e.target.closest('[data-action="drill-month"]');
+    if (monthDrill) {
+      const m = parseInt(monthDrill.dataset.month, 10);
+      const y = parseInt(monthDrill.dataset.year, 10);
+      calAnchor = new Date(y, m, 1);
+      calScaleMode = 'month';
+      document.querySelectorAll('.scale-btn').forEach(b => b.classList.toggle('active', b.dataset.scale === 'month'));
+      renderCalendar();
+      return;
+    }
+    // drill from "+N more" in month → day
+    const dayDrill = e.target.closest('[data-action="drill-day"]');
+    if (dayDrill) {
+      calAnchor = new Date(dayDrill.dataset.date + 'T00:00:00');
+      calScaleMode = 'day';
+      document.querySelectorAll('.scale-btn').forEach(b => b.classList.toggle('active', b.dataset.scale === 'day'));
+      renderCalendar();
+      return;
+    }
+    // click empty day in month/week → drill to day view
+    const cell = e.target.closest('.cal-day-cell');
+    if (cell && e.target === cell) {
+      calAnchor = new Date(cell.dataset.date + 'T00:00:00');
+      calScaleMode = 'day';
+      document.querySelectorAll('.scale-btn').forEach(b => b.classList.toggle('active', b.dataset.scale === 'day'));
+      renderCalendar();
+      return;
+    }
+    // toggle done from day view
+    if (e.target.closest('[data-action="cal-toggle"]')) {
+      const row = e.target.closest('.cal-day-row');
+      const job = state.jobs.find(j => j.id === row.dataset.jobId);
+      if (!job) return;
+      const task = job.tasks.find(t => t.id === row.dataset.taskId);
+      if (!task) return;
+      task.done = !task.done;
+      save(); renderCalendar(); render();
+      return;
+    }
+    // click a chip → toggle done
+    const chip = e.target.closest('.cal-task-chip:not(.overflow)');
+    if (chip) {
+      const job = state.jobs.find(j => j.id === chip.dataset.jobId);
+      if (!job) return;
+      const task = job.tasks.find(t => t.id === chip.dataset.taskId);
+      if (!task) return;
+      task.done = !task.done;
+      save(); renderCalendar(); render();
+    }
+  });
+
+  // ========= INIT =========
+  applyLayout(currentLayout);
+</script>
+</body>
+</html>
