@@ -2666,6 +2666,231 @@
     .view-tab svg { display: none; }
     .scale-btn { font-size: 9px; padding: 8px 2px; }
   }
+/* ============ ERROR BANNER ============ */
+.error-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10000;
+  background: linear-gradient(180deg, #c62a37, #8f1e28);
+  color: white;
+  padding-top: env(safe-area-inset-top);
+  box-shadow: 0 4px 20px rgba(198, 42, 55, 0.4);
+  animation: errorSlideDown 0.25s ease-out;
+}
+@keyframes errorSlideDown {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+.error-banner-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 18px;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+.error-banner-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.error-banner-body { flex: 1; min-width: 0; }
+.error-banner-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.error-banner-msg {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.95);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.error-banner-close {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.error-banner-close:hover { background: rgba(255, 255, 255, 0.2); }
+
+/* ============ TOP RIGHT CLUSTER ============ */
+.top-right-cluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-self: end;
+}
+
+/* ============ SESSION INDICATOR ============ */
+.session-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 6px 6px;
+  background: var(--bg-1);
+  border: 1px solid var(--line-bright);
+  border-radius: var(--r-md);
+  font-family: 'JetBrains Mono', monospace;
+}
+.session-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--red);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+.session-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+.session-label {
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  color: var(--ink-2);
+}
+.session-email {
+  font-size: 11px;
+  color: var(--ink-0);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+.session-signout {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.session-signout:hover {
+  color: var(--red);
+  border-color: var(--red);
+  background: var(--bg-2);
+}
+
+/* ============ SYNC BADGE (REDESIGNED, always visible) ============ */
+.sync-badge {
+  position: static;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--bg-1);
+  border: 1px solid var(--line-bright);
+  border-radius: var(--r-md);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-1);
+  white-space: nowrap;
+  opacity: 1;
+  transition: all 0.25s;
+  pointer-events: auto;
+}
+.sync-badge .sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  transition: background 0.2s, box-shadow 0.2s;
+  flex-shrink: 0;
+}
+.sync-badge.synced {
+  color: var(--green);
+  border-color: color-mix(in srgb, var(--green) 50%, var(--line));
+}
+.sync-badge.synced .sync-dot {
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+.sync-badge.saving {
+  color: var(--amber);
+  border-color: color-mix(in srgb, var(--amber) 50%, var(--line));
+}
+.sync-badge.saving .sync-dot {
+  background: var(--amber);
+  box-shadow: 0 0 8px var(--amber);
+  animation: pulse 1s infinite;
+}
+.sync-badge.error {
+  color: var(--red);
+  border-color: var(--red);
+  background: color-mix(in srgb, var(--red) 10%, var(--bg-1));
+}
+.sync-badge.error .sync-dot {
+  background: var(--red);
+  box-shadow: 0 0 10px var(--red);
+}
+.sync-badge.offline .sync-dot { background: var(--ink-3); }
+
+@media (max-width: 760px) {
+  .top-right-cluster {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 6px;
+    width: 100%;
+  }
+  .session-indicator {
+    order: 1;
+    flex: 1;
+    min-width: 0;
+    padding: 5px 8px 5px 5px;
+    gap: 8px;
+  }
+  .session-avatar { width: 24px; height: 24px; font-size: 11px; }
+  .session-label { font-size: 7px; }
+  .session-email { font-size: 10px; max-width: 140px; }
+  .sync-badge {
+    order: 2;
+    font-size: 9px;
+    padding: 6px 10px;
+    letter-spacing: 0.1em;
+  }
+  .clock {
+    order: 3;
+    flex-basis: 100%;
+    justify-self: flex-start;
+  }
+  .error-banner-inner { padding: 12px 14px; gap: 10px; }
+  .error-banner-title { font-size: 12px; }
+  .error-banner-msg { font-size: 11px; }
+}
 </style>
 </head>
 <body>
@@ -2693,10 +2918,16 @@
   </div>
 </div>
 
-<!-- Sync status indicator (top-right) -->
-<div id="sync-badge" class="sync-badge">
-  <span class="sync-dot"></span>
-  <span id="sync-text">Connecting...</span>
+<!-- Error banner — persistent on-screen error display -->
+<div id="error-banner" class="error-banner" style="display:none;">
+  <div class="error-banner-inner">
+    <span class="error-banner-icon">&#9888;</span>
+    <div class="error-banner-body">
+      <div class="error-banner-title" id="error-banner-title">Error</div>
+      <div class="error-banner-msg" id="error-banner-msg"></div>
+    </div>
+    <button class="error-banner-close" id="error-banner-close" title="Dismiss">&times;</button>
+  </div>
 </div>
 
 <header class="topbar">
@@ -2720,9 +2951,29 @@
     <div class="status-item compact"><span class="dot red"></span><span id="overdue-flag">0</span> Overdue</div>
   </nav>
 
-  <div class="clock">
-    <span><span class="label">DATE</span> <span id="date">----</span></span>
-    <span><span class="label">TIME</span> <span id="time">--:--:--</span></span>
+  <div class="top-right-cluster">
+    <div class="session-indicator" id="session-indicator" style="display:none;">
+      <div class="session-avatar" id="session-avatar">?</div>
+      <div class="session-info">
+        <div class="session-label">SIGNED IN</div>
+        <div class="session-email" id="session-email">&mdash;</div>
+      </div>
+      <button class="session-signout" id="session-signout" title="Sign out">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+      </button>
+    </div>
+    <div id="sync-badge" class="sync-badge">
+      <span class="sync-dot"></span>
+      <span id="sync-text">Initializing...</span>
+    </div>
+    <div class="clock">
+      <span><span class="label">DATE</span> <span id="date">----</span></span>
+      <span><span class="label">TIME</span> <span id="time">--:--:--</span></span>
+    </div>
   </div>
 </header>
 
@@ -2866,77 +3117,164 @@
 </div>
 
 <script>
+  // =============================================================================
+  // MILLER WOODWORKING OPS — hardened data layer + diagnostic UI
+  // =============================================================================
+  // Changes from prior version:
+  //   * Global error handlers (window.onerror + unhandledrejection) so nothing is silent
+  //   * On-screen error banner replaces alert() — works in iOS PWA mode
+  //   * Always-visible sync badge (green/amber/red) with meaningful states
+  //   * Session indicator shows logged-in email + sign-out button
+  //   * Explicit user_id stamping on every row (was relying on RLS default)
+  //   * Explicit onConflict:'id' on upserts (was defaulting to primary key detection)
+  //   * Guard: save() bails loudly if currentUser is null
+  //   * Realtime subscription gated by savePending so we don't race our own writes
+  //   * All save/load errors surface to the banner, not console-only
+  // =============================================================================
+ 
+ 
+  // ========= GLOBAL ERROR HANDLERS =========
+  // Catches anything the try/catches miss. First line of defense against silent failures.
+  window.addEventListener('error', (e) => {
+    console.error('[window.onerror]', e.error || e.message);
+    showError('Unexpected error', (e.error && e.error.message) || e.message || 'Unknown error', e.error && e.error.stack);
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    console.error('[unhandledrejection]', e.reason);
+    const msg = (e.reason && (e.reason.message || e.reason.error_description)) || String(e.reason);
+    showError('Promise rejected', msg, e.reason && e.reason.stack);
+  });
+ 
+ 
+  // ========= ERROR BANNER =========
+  const errorBanner = document.getElementById('error-banner');
+  const errorTitle = document.getElementById('error-banner-title');
+  const errorMsg = document.getElementById('error-banner-msg');
+  document.getElementById('error-banner-close').addEventListener('click', hideError);
+ 
+  /** Display an error message in the top banner. Stays until dismissed. */
+  function showError(title, message, detail) {
+    errorTitle.textContent = title;
+    errorMsg.textContent = detail ? `${message}\n\n${detail}` : message;
+    errorBanner.style.display = 'block';
+    document.body.classList.add('has-error');
+  }
+  function hideError() {
+    errorBanner.style.display = 'none';
+    document.body.classList.remove('has-error');
+  }
+ 
+ 
   // ========= LOGO =========
-  // Inline SVG logo - drawn as vector so it scales cleanly and can inherit text color.
   document.getElementById('brand-logo').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 120" preserveAspectRatio="xMidYMid meet"><g transform="translate(130, 30)"><line x1="0" y1="-30" x2="0" y2="30" stroke="currentColor" stroke-width="2.5"/><line x1="-30" y1="0" x2="30" y2="0" stroke="currentColor" stroke-width="2.5"/><g fill="none" stroke="#e63946" stroke-width="6"><path d="M -14.5 -4 A 15 15 0 0 1 -4 -14.5"/><path d="M 4 -14.5 A 15 15 0 0 1 14.5 -4"/><path d="M 14.5 4 A 15 15 0 0 1 4 14.5"/><path d="M -4 14.5 A 15 15 0 0 1 -14.5 4"/></g><circle cx="0" cy="0" r="3.5" fill="#e63946"/></g><text x="130" y="100" text-anchor="middle" font-family="Oswald, Impact, sans-serif" font-weight="700" font-size="44" letter-spacing="4" fill="currentColor">MILLER</text></svg>`;
-
+ 
+  document.getElementById('auth-logo').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><g transform="translate(50, 50)"><line x1="0" y1="-36" x2="0" y2="36" stroke="currentColor" stroke-width="3"/><line x1="-36" y1="0" x2="36" y2="0" stroke="currentColor" stroke-width="3"/><g fill="none" stroke="#e63946" stroke-width="7"><path d="M -18 -5 A 19 19 0 0 1 -5 -18"/><path d="M 5 -18 A 19 19 0 0 1 18 -5"/><path d="M 18 5 A 19 19 0 0 1 5 18"/><path d="M -5 18 A 19 19 0 0 1 -18 5"/></g><circle cx="0" cy="0" r="4.5" fill="#e63946"/></g></svg>`;
+ 
+ 
   // ========= SUPABASE CONFIG =========
   const SUPABASE_URL = 'https://iddxhxcdxxbeepqcrvap.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkZHhoeGNkeHhiZWVwcWNydmFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MDY5MzUsImV4cCI6MjA5MjQ4MjkzNX0.zVQs9X8iVtXAGvh7_cpQ8h3BZZosGkl7d6XGgyy34j0';
-
+ 
+  // Guard: if the Supabase script failed to load, tell the user
+  if (!window.supabase) {
+    showError('Supabase library failed to load', 'Check your internet connection and reload the page.');
+    throw new Error('Supabase library not loaded');
+  }
+ 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: { persistSession: true, autoRefreshToken: true }
   });
-
+ 
   let currentUser = null;
-
-  // Paint the auth-overlay logo
-  document.getElementById('auth-logo').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><g transform="translate(50, 50)"><line x1="0" y1="-36" x2="0" y2="36" stroke="currentColor" stroke-width="3"/><line x1="-36" y1="0" x2="36" y2="0" stroke="currentColor" stroke-width="3"/><g fill="none" stroke="#e63946" stroke-width="7"><path d="M -18 -5 A 19 19 0 0 1 -5 -18"/><path d="M 5 -18 A 19 19 0 0 1 18 -5"/><path d="M 18 5 A 19 19 0 0 1 5 18"/><path d="M -5 18 A 19 19 0 0 1 -18 5"/></g><circle cx="0" cy="0" r="4.5" fill="#e63946"/></g></svg>`;
-
+ 
+ 
   // ========= STATE =========
-  function todayStr() {
-    const d = new Date();
-    return d.toISOString().slice(0, 10);
-  }
-
-  function addDaysStr(days) {
-    const d = new Date();
-    d.setDate(d.getDate() + days);
-    return d.toISOString().slice(0, 10);
-  }
-
   let state = { jobs: [] };
   let currentFilter = 'all';
   let jobCounter = 0;
-
-  // Curated palette for job color coding
+ 
   const JOB_PALETTE = [
     '#d97706', '#0891b2', '#16a34a', '#8b5cf6',
     '#db2777', '#0284c7', '#ca8a04', '#059669',
     '#c026d3', '#2563eb', '#65a30d', '#e11d48',
   ];
-
+ 
   function pickNextColor() {
     const used = new Set(state.jobs.map(j => j.color).filter(Boolean));
     const fresh = JOB_PALETTE.find(c => !used.has(c));
     if (fresh) return fresh;
     return JOB_PALETTE[state.jobs.length % JOB_PALETTE.length];
   }
-
+ 
+ 
   // ========= SYNC BADGE =========
   const syncBadge = document.getElementById('sync-badge');
   const syncText = document.getElementById('sync-text');
+ 
+  /**
+   * Update the sync badge.
+   * @param {'idle'|'saving'|'synced'|'error'|'offline'} status
+   * @param {string} text - short label shown in the badge
+   */
   function setSyncStatus(status, text) {
-    syncBadge.classList.remove('synced', 'saving', 'error');
-    syncBadge.classList.add('visible', status);
+    syncBadge.classList.remove('synced', 'saving', 'error', 'offline');
+    if (status !== 'idle') syncBadge.classList.add(status);
     syncText.textContent = text;
-    if (status === 'synced') {
-      setTimeout(() => syncBadge.classList.remove('visible'), 1500);
+  }
+  // Initial state
+  setSyncStatus('offline', 'Offline');
+ 
+ 
+  // ========= SESSION INDICATOR =========
+  const sessionIndicator = document.getElementById('session-indicator');
+  const sessionAvatar = document.getElementById('session-avatar');
+  const sessionEmail = document.getElementById('session-email');
+  const sessionSignout = document.getElementById('session-signout');
+ 
+  function updateSessionIndicator() {
+    if (currentUser && currentUser.email) {
+      sessionIndicator.style.display = 'flex';
+      sessionEmail.textContent = currentUser.email;
+      sessionAvatar.textContent = currentUser.email.charAt(0).toUpperCase();
+    } else {
+      sessionIndicator.style.display = 'none';
     }
   }
-
-  // ========= DATA LAYER (Supabase) =========
-  // load() fetches all jobs and tasks for the current user.
+ 
+  sessionSignout.addEventListener('click', async () => {
+    if (!confirm('Sign out?')) return;
+    try {
+      await sb.auth.signOut();
+      // onAuthStateChange will handle the UI transition
+    } catch (e) {
+      showError('Sign-out failed', e.message || String(e));
+    }
+  });
+ 
+ 
+  // ========= DATA LAYER =========
+  /**
+   * Load all jobs and tasks for the current user from Supabase.
+   * Surfaces any error to the banner.
+   */
   async function load() {
-    if (!currentUser) return;
+    if (!currentUser) {
+      console.warn('load() called before currentUser is set — skipping');
+      return;
+    }
     setSyncStatus('saving', 'Loading...');
     try {
-      const { data: jobs, error: jobsErr } = await sb.from('jobs').select('*').order('created_at');
-      if (jobsErr) throw jobsErr;
-      const { data: tasks, error: tasksErr } = await sb.from('tasks').select('*').order('sort_order');
-      if (tasksErr) throw tasksErr;
-
-      // Assemble into state shape
+      const [jobsResp, tasksResp] = await Promise.all([
+        sb.from('jobs').select('*').order('created_at'),
+        sb.from('tasks').select('*').order('sort_order'),
+      ]);
+ 
+      if (jobsResp.error) throw new Error('Load jobs: ' + jobsResp.error.message);
+      if (tasksResp.error) throw new Error('Load tasks: ' + tasksResp.error.message);
+ 
+      const jobs = jobsResp.data || [];
+      const tasks = tasksResp.data || [];
+ 
       state.jobs = jobs.map(j => ({
         id: j.id,
         name: j.name,
@@ -2952,18 +3290,25 @@
         })),
       }));
       jobCounter = state.jobs.length;
-      setSyncStatus('synced', 'Synced');
+      setSyncStatus('synced', `Synced · ${state.jobs.length} jobs`);
+      hideError();
     } catch (e) {
       console.error('Load failed:', e);
       setSyncStatus('error', 'Load failed');
-      alert('Load failed: ' + (e.message || e));
+      showError('Could not load your data', e.message || String(e),
+        'Possible causes:\n' +
+        '• Supabase tables missing or wrong schema\n' +
+        '• Row-level security policy blocking SELECT\n' +
+        '• Network issue\n' +
+        'Your user id: ' + (currentUser ? currentUser.id : 'null'));
     }
   }
-
-  // save() reconciles state to Supabase — upserts everything present, deletes anything removed.
-  // Debounced so rapid edits don't hammer the API.
+ 
+  // Debounced save — coalesces rapid edits into one write.
   let saveTimer = null;
   let savePending = false;
+  let saveInFlight = false;
+ 
   function save() {
     savePending = true;
     if (saveTimer) return;
@@ -2974,101 +3319,151 @@
       await doSave();
     }, 400);
   }
-
+ 
+  /**
+   * Reconcile state -> Supabase:
+   *   1. Build job + task rows from state, stamping user_id on each
+   *   2. Delete any rows in DB not present in state
+   *   3. Upsert all rows in state with explicit onConflict: 'id'
+   *
+   * Any failure is surfaced to the on-screen error banner.
+   */
   async function doSave() {
-    if (!currentUser) return;
+    if (!currentUser) {
+      console.error('doSave() called but currentUser is null — this should never happen');
+      showError('Not signed in', 'Cannot save — you appear to be signed out. Try refreshing the page.');
+      setSyncStatus('error', 'No session');
+      return;
+    }
+    if (saveInFlight) {
+      // Another save is running; queue another when it finishes
+      savePending = true;
+      return;
+    }
+ 
+    saveInFlight = true;
     setSyncStatus('saving', 'Saving...');
+ 
     try {
-      // Build job and task lists from current state
+      const uid = currentUser.id;
+      const now = new Date().toISOString();
+ 
+      // Build job rows with user_id explicitly stamped
       const jobRows = state.jobs.map(j => ({
         id: j.id,
-        user_id: currentUser.id,
+        user_id: uid,
         name: j.name,
         client: j.client || null,
         code: j.code || null,
         color: j.color || null,
-        updated_at: new Date().toISOString(),
+        updated_at: now,
       }));
-
+ 
+      // Build task rows similarly
       const taskRows = [];
       state.jobs.forEach(job => {
         job.tasks.forEach((t, i) => {
           taskRows.push({
             id: t.id,
             job_id: job.id,
-            user_id: currentUser.id,
+            user_id: uid,
             text: t.text,
             priority: t.priority || 'medium',
             deadline: t.deadline || null,
             done: !!t.done,
             sort_order: i,
-            updated_at: new Date().toISOString(),
+            updated_at: now,
           });
         });
       });
-
-      // 1. Fetch current DB ids to know what to delete
-      const [{ data: existingJobs }, { data: existingTasks }] = await Promise.all([
+ 
+      // Step 1: find out what's already in the DB so we can delete anything removed
+      const [existingJobsResp, existingTasksResp] = await Promise.all([
         sb.from('jobs').select('id'),
         sb.from('tasks').select('id'),
       ]);
-
+      if (existingJobsResp.error) throw new Error('List jobs: ' + existingJobsResp.error.message);
+      if (existingTasksResp.error) throw new Error('List tasks: ' + existingTasksResp.error.message);
+ 
       const stateJobIds = new Set(jobRows.map(r => r.id));
       const stateTaskIds = new Set(taskRows.map(r => r.id));
-      const jobsToDelete = (existingJobs || []).filter(j => !stateJobIds.has(j.id)).map(j => j.id);
-      const tasksToDelete = (existingTasks || []).filter(t => !stateTaskIds.has(t.id)).map(t => t.id);
-
-      // 2. Delete removed rows
+      const jobsToDelete = (existingJobsResp.data || []).filter(j => !stateJobIds.has(j.id)).map(j => j.id);
+      const tasksToDelete = (existingTasksResp.data || []).filter(t => !stateTaskIds.has(t.id)).map(t => t.id);
+ 
+      // Step 2: delete removed rows (tasks first due to FK)
       if (tasksToDelete.length) {
         const { error } = await sb.from('tasks').delete().in('id', tasksToDelete);
-        if (error) throw error;
+        if (error) throw new Error('Delete tasks: ' + error.message);
       }
       if (jobsToDelete.length) {
         const { error } = await sb.from('jobs').delete().in('id', jobsToDelete);
-        if (error) throw error;
+        if (error) throw new Error('Delete jobs: ' + error.message);
       }
-
-      // 3. Upsert everything (jobs first because tasks reference them)
+ 
+      // Step 3: upsert everything (jobs first due to FK).
+      // Explicit onConflict: 'id' ensures Supabase uses our primary key for conflict detection.
       if (jobRows.length) {
-        const { error } = await sb.from('jobs').upsert(jobRows);
-        if (error) throw error;
+        const { error } = await sb.from('jobs').upsert(jobRows, { onConflict: 'id' });
+        if (error) throw new Error('Upsert jobs: ' + error.message);
       }
       if (taskRows.length) {
-        const { error } = await sb.from('tasks').upsert(taskRows);
-        if (error) throw error;
+        const { error } = await sb.from('tasks').upsert(taskRows, { onConflict: 'id' });
+        if (error) throw new Error('Upsert tasks: ' + error.message);
       }
-
-      setSyncStatus('synced', 'Saved');
-      // If save() was called again while we were saving, run again
-      if (savePending) save();
+ 
+      setSyncStatus('synced', `Saved · ${state.jobs.length} jobs`);
+      hideError();
     } catch (e) {
       console.error('Save failed:', e);
-      // Show a truncated version of the actual error so user can report it
-      const msg = (e.message || String(e)).slice(0, 60);
-      setSyncStatus('error', 'Err: ' + msg);
-      alert('Save failed: ' + (e.message || e));
+      setSyncStatus('error', 'Save failed');
+      showError('Could not save your changes', e.message || String(e),
+        'The data is still in the app but not in the cloud.\n' +
+        'Possible causes:\n' +
+        '• Row-level security policy missing or wrong (WITH CHECK clause)\n' +
+        '• Table schema mismatch\n' +
+        '• Session expired (try sign out + sign in)\n' +
+        'Your user id: ' + (currentUser ? currentUser.id : 'null'));
+    } finally {
+      saveInFlight = false;
+      // If another save was queued while we were running, run it now
+      if (savePending) {
+        savePending = false;
+        save();
+      }
     }
   }
-
+ 
+ 
   // ========= REALTIME =========
   let realtimeChannel = null;
   function setupRealtime() {
-    if (realtimeChannel) { sb.removeChannel(realtimeChannel); }
-    realtimeChannel = sb.channel('db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs', filter: `user_id=eq.${currentUser.id}` }, async () => {
-        // Don't reload if we're mid-save (our own writes trigger this too)
-        if (saveTimer || savePending) return;
-        await load();
-        render();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `user_id=eq.${currentUser.id}` }, async () => {
-        if (saveTimer || savePending) return;
-        await load();
-        render();
-      })
-      .subscribe();
+    if (!currentUser) return;
+    if (realtimeChannel) {
+      try { sb.removeChannel(realtimeChannel); } catch(_) {}
+    }
+    realtimeChannel = sb.channel('db-changes-' + currentUser.id)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'jobs', filter: `user_id=eq.${currentUser.id}` },
+        async () => {
+          // Don't reload while we're saving or about to — would overwrite in-flight edits
+          if (saveTimer || savePending || saveInFlight) return;
+          await load();
+          render();
+        })
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'tasks', filter: `user_id=eq.${currentUser.id}` },
+        async () => {
+          if (saveTimer || savePending || saveInFlight) return;
+          await load();
+          render();
+        })
+      .subscribe((status) => {
+        // Log subscription status for diagnostics
+        console.log('[realtime] subscription status:', status);
+      });
   }
-
+ 
+ 
   // ========= AUTH =========
   const authOverlay = document.getElementById('auth-overlay');
   const authFormView = document.getElementById('auth-form-view');
@@ -3078,7 +3473,10 @@
   const authBack = document.getElementById('auth-back');
   const authError = document.getElementById('auth-error');
   const authSentEmail = document.getElementById('auth-sent-email');
-
+  const authCode = document.getElementById('auth-code');
+  const authVerify = document.getElementById('auth-verify');
+  let pendingEmail = '';
+ 
   function showAuthError(msg) {
     authError.textContent = msg;
     authError.style.display = 'block';
@@ -3087,11 +3485,7 @@
     authError.style.display = 'none';
     authError.textContent = '';
   }
-
-  const authCode = document.getElementById('auth-code');
-  const authVerify = document.getElementById('auth-verify');
-  let pendingEmail = '';
-
+ 
   authSend.addEventListener('click', async () => {
     clearAuthError();
     const email = authEmail.value.trim();
@@ -3102,8 +3496,6 @@
     authSend.disabled = true;
     authSend.textContent = 'Sending...';
     try {
-      // shouldCreateUser: true lets first-time users auto-signup
-      // No emailRedirectTo means Supabase sends a 6-digit code instead of a magic link
       const { error } = await sb.auth.signInWithOtp({
         email,
         options: { shouldCreateUser: true }
@@ -3121,7 +3513,7 @@
       authSend.textContent = 'Send Code';
     }
   });
-
+ 
   authVerify.addEventListener('click', async () => {
     clearAuthError();
     const code = authCode.value.trim();
@@ -3132,13 +3524,13 @@
     authVerify.disabled = true;
     authVerify.textContent = 'Verifying...';
     try {
-      const { data, error } = await sb.auth.verifyOtp({
+      const { error } = await sb.auth.verifyOtp({
         email: pendingEmail,
         token: code,
         type: 'email',
       });
       if (error) throw error;
-      // onAuthStateChange will handle the transition to the dashboard
+      // onAuthStateChange handles the rest
     } catch (e) {
       showAuthError(e.message || 'Invalid or expired code');
     } finally {
@@ -3146,70 +3538,88 @@
       authVerify.textContent = 'Verify & Sign In';
     }
   });
-
-  authCode.addEventListener('keydown', e => {
-    if (e.key === 'Enter') authVerify.click();
-  });
+ 
+  authCode.addEventListener('keydown', e => { if (e.key === 'Enter') authVerify.click(); });
   authCode.addEventListener('input', e => {
-    // Strip non-digits; cap at 8 chars
-    const v = e.target.value.replace(/\D/g, '').slice(0, 8);
-    e.target.value = v;
-    // Don't auto-submit — user should finish typing since codes may be 6 or 8 digits.
-    // They'll tap Verify themselves.
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 8);
   });
-
   authBack.addEventListener('click', () => {
     authSentView.style.display = 'none';
     authFormView.style.display = 'flex';
     authCode.value = '';
     clearAuthError();
   });
-
-  authEmail.addEventListener('keydown', e => {
-    if (e.key === 'Enter') authSend.click();
-  });
-
+  authEmail.addEventListener('keydown', e => { if (e.key === 'Enter') authSend.click(); });
+ 
   async function checkAuth() {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session?.user) {
-      currentUser = session.user;
-      authOverlay.classList.add('hidden');
-      await load();
-      setupRealtime();
-      applyLayout(currentLayout);
-    } else {
-      authOverlay.classList.remove('hidden');
+    try {
+      const { data: { session }, error } = await sb.auth.getSession();
+      if (error) throw error;
+      if (session && session.user) {
+        currentUser = session.user;
+        authOverlay.classList.add('hidden');
+        updateSessionIndicator();
+        await load();
+        setupRealtime();
+        applyLayout(currentLayout);
+      } else {
+        currentUser = null;
+        authOverlay.classList.remove('hidden');
+        updateSessionIndicator();
+        setSyncStatus('offline', 'Not signed in');
+      }
+    } catch (e) {
+      console.error('Auth check failed:', e);
+      showError('Auth check failed', e.message || String(e),
+        'The app could not determine if you are signed in. Try reloading the page.');
+      setSyncStatus('error', 'Auth error');
     }
   }
-
+ 
   sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session?.user) {
-      currentUser = session.user;
-      authOverlay.classList.add('hidden');
-      await load();
-      setupRealtime();
-      applyLayout(currentLayout);
-    } else if (event === 'SIGNED_OUT') {
-      currentUser = null;
-      authOverlay.classList.remove('hidden');
+    console.log('[auth] state change:', event);
+    try {
+      if (event === 'SIGNED_IN' && session && session.user) {
+        currentUser = session.user;
+        authOverlay.classList.add('hidden');
+        updateSessionIndicator();
+        await load();
+        setupRealtime();
+        applyLayout(currentLayout);
+      } else if (event === 'SIGNED_OUT') {
+        currentUser = null;
+        state.jobs = [];
+        if (realtimeChannel) {
+          try { sb.removeChannel(realtimeChannel); } catch(_) {}
+          realtimeChannel = null;
+        }
+        authOverlay.classList.remove('hidden');
+        updateSessionIndicator();
+        setSyncStatus('offline', 'Signed out');
+        render();
+      } else if (event === 'TOKEN_REFRESHED' && session && session.user) {
+        currentUser = session.user;
+        updateSessionIndicator();
+      }
+    } catch (e) {
+      console.error('Auth state change handler failed:', e);
+      showError('Auth state change failed', e.message || String(e));
     }
   });
-
-
+ 
+ 
   // ========= UTILS =========
   function fmtDate(iso) {
     if (!iso) return 'No deadline';
     const d = new Date(iso + 'T00:00:00');
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
   }
-
   function daysFromNow(iso) {
     if (!iso) return null;
     const today = new Date(); today.setHours(0,0,0,0);
     const d = new Date(iso + 'T00:00:00');
     return Math.round((d - today) / 86400000);
   }
-
   function deadlineClass(iso) {
     const d = daysFromNow(iso);
     if (d === null) return '';
@@ -3217,7 +3627,6 @@
     if (d <= 2) return 'soon';
     return '';
   }
-
   function deadlineLabel(iso) {
     const d = daysFromNow(iso);
     if (d === null) return '—';
@@ -3227,7 +3636,6 @@
     if (d <= 7) return `+${d}d`;
     return fmtDate(iso);
   }
-
   function matchesFilter(task, filter) {
     if (filter === 'all') return true;
     const d = daysFromNow(task.deadline);
@@ -3239,35 +3647,29 @@
     if (filter === 'month') return d >= 0 && d <= 30;
     return true;
   }
-
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({
       '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
     }[c]));
   }
-
-  function genCode() {
-    jobCounter += 1;
-    return 'MW-' + String(412 + jobCounter).padStart(4, '0');
-  }
-
+ 
+ 
   // ========= RENDER =========
   const grid = document.getElementById('jobs-grid');
   const focusSidebar = document.getElementById('focus-sidebar');
   const focusDetail = document.getElementById('focus-detail');
   const focusLayoutEl = document.querySelector('[data-layout-panel="focus"]');
-
+ 
   const LAYOUT_KEY = 'miller_ww_layout_v1';
   let currentLayout = localStorage.getItem(LAYOUT_KEY) || 'grid';
-  let selectedJobId = null; // for focus mode
-
-  // Build HTML for a single job card (used by both layouts)
+  let selectedJobId = null;
+ 
   function jobCardHtml(job) {
     const visibleTasks = job.tasks.filter(t => matchesFilter(t, currentFilter));
     const total = job.tasks.length;
     const done = job.tasks.filter(t => t.done).length;
     const pct = total ? Math.round((done/total) * 100) : 0;
-
+ 
     return `
       <div class="job-color-bar"></div>
       <div class="job-header">
@@ -3283,19 +3685,19 @@
           </button>
         </div>
       </div>
-
+ 
       <div class="job-stats">
         <span class="stat-pill"><strong>${done}</strong>/${total} tasks</span>
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%; background: linear-gradient(90deg, ${job.color}, ${job.color}cc);"></div></div>
         <span class="stat-pill mono"><strong>${pct}%</strong></span>
       </div>
-
+ 
       <div class="tasks-list">
         ${visibleTasks.length === 0
           ? `<div class="task-empty">${total === 0 ? '// NO TASKS · ADD ONE BELOW' : '// NO TASKS MATCH FILTER'}</div>`
           : visibleTasks.map(t => renderTask(t)).join('')}
       </div>
-
+ 
       <form class="add-task-form" data-action="add-task">
         <input type="text" name="text" placeholder="New task..." required maxlength="140" />
         <select name="priority">
@@ -3309,17 +3711,14 @@
       </form>
     `;
   }
-
+ 
   function render() {
-    if (currentLayout === 'grid') {
-      renderGrid();
-    } else {
-      renderFocus();
-    }
+    if (currentLayout === 'grid') renderGrid();
+    else renderFocus();
     updateMetrics();
     updateFilterCounts();
   }
-
+ 
   function renderGrid() {
     grid.innerHTML = '';
     state.jobs.forEach(job => {
@@ -3330,17 +3729,15 @@
       card.innerHTML = jobCardHtml(job);
       grid.appendChild(card);
     });
-
-    // "Add Job" card at end
+ 
     const addCard = document.createElement('div');
     addCard.className = 'add-job-card';
     addCard.innerHTML = `<div class="plus">+</div><div class="text">// New Job Order</div>`;
     addCard.addEventListener('click', openJobModal);
     grid.appendChild(addCard);
   }
-
+ 
   function renderFocus() {
-    // Sidebar list
     const jobCount = state.jobs.length;
     let sidebarHtml = `
       <div class="focus-sidebar-header">
@@ -3348,7 +3745,7 @@
         <span class="job-total">${jobCount}</span>
       </div>
     `;
-
+ 
     if (jobCount === 0) {
       sidebarHtml += `<div class="focus-sidebar-empty">// No jobs yet</div>`;
     } else {
@@ -3370,7 +3767,7 @@
       });
       sidebarHtml += '</div>';
     }
-
+ 
     sidebarHtml += `
       <div class="focus-sidebar-add">
         <button class="focus-add-btn" id="focus-add-btn">
@@ -3380,13 +3777,9 @@
       </div>
     `;
     focusSidebar.innerHTML = sidebarHtml;
-
-    // Detail pane
-    // If selected job no longer exists (e.g. deleted), reset selection
-    if (selectedJobId && !state.jobs.find(j => j.id === selectedJobId)) {
-      selectedJobId = null;
-    }
-
+ 
+    if (selectedJobId && !state.jobs.find(j => j.id === selectedJobId)) selectedJobId = null;
+ 
     const selectedJob = state.jobs.find(j => j.id === selectedJobId);
     if (!selectedJob) {
       focusDetail.innerHTML = `
@@ -3406,7 +3799,6 @@
       `;
       focusLayoutEl.classList.remove('detail-open');
     } else {
-      // Reuse the same job card HTML for the detail pane
       focusDetail.innerHTML = `
         <button class="focus-back-btn" id="focus-back-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -3419,7 +3811,7 @@
       focusLayoutEl.classList.add('detail-open');
     }
   }
-
+ 
   function renderTask(t) {
     const dClass = deadlineClass(t.deadline);
     return `
@@ -3437,7 +3829,7 @@
       </div>
     `;
   }
-
+ 
   function updateMetrics() {
     const allTasks = state.jobs.flatMap(j => j.tasks);
     const open = allTasks.filter(t => !t.done);
@@ -3448,7 +3840,7 @@
       const d = daysFromNow(t.deadline);
       return d !== null && d < 0;
     }).length;
-
+ 
     document.getElementById('m-jobs').textContent = state.jobs.length;
     document.getElementById('m-open').textContent = open.length;
     document.getElementById('m-crit').textContent = crit;
@@ -3456,7 +3848,7 @@
     document.getElementById('m-rate').textContent = rate + '%';
     document.getElementById('overdue-flag').textContent = overdue;
   }
-
+ 
   function updateFilterCounts() {
     const allTasks = state.jobs.flatMap(j => j.tasks);
     const filters = ['all','overdue','today','week','month','nodate'];
@@ -3466,21 +3858,21 @@
       if (el) el.textContent = n;
     });
   }
-
+ 
+ 
   // ========= EVENT DELEGATION =========
-  // Attach to the dashboard view panel so handlers work for both grid and focus layouts
   const jobAreaEl = document.querySelector('[data-view-panel="dashboard"]');
-
+ 
   jobAreaEl.addEventListener('click', e => {
     const card = e.target.closest('.job-card');
     if (!card) return;
     const jobId = card.dataset.jobId;
     const job = state.jobs.find(j => j.id === jobId);
     if (!job) return;
-
+ 
     const action = e.target.closest('[data-action]')?.dataset.action;
     if (!action) return;
-
+ 
     if (action === 'delete-job') {
       if (confirm(`Delete job "${job.name}"? This cannot be undone.`)) {
         state.jobs = state.jobs.filter(j => j.id !== jobId);
@@ -3488,18 +3880,18 @@
       }
       return;
     }
-
+ 
     if (action === 'open-color') {
       openColorPicker(e.target.closest('.color-swatch-btn'), job);
       return;
     }
-
+ 
     const taskEl = e.target.closest('.task');
     if (!taskEl) return;
     const taskId = taskEl.dataset.taskId;
     const task = job.tasks.find(t => t.id === taskId);
     if (!task) return;
-
+ 
     if (action === 'toggle') {
       task.done = !task.done;
       save(); render();
@@ -3520,25 +3912,18 @@
       parent.appendChild(input);
       input.focus();
       input.showPicker && input.showPicker();
-      input.addEventListener('blur', () => {
-        task.deadline = input.value;
-        save(); render();
-      });
-      input.addEventListener('change', () => {
-        task.deadline = input.value;
-        save(); render();
-      });
+      input.addEventListener('blur', () => { task.deadline = input.value; save(); render(); });
+      input.addEventListener('change', () => { task.deadline = input.value; save(); render(); });
     }
   });
-
-  // inline edit commits
+ 
   jobAreaEl.addEventListener('blur', e => {
     const card = e.target.closest('.job-card');
     if (!card) return;
     const jobId = card.dataset.jobId;
     const job = state.jobs.find(j => j.id === jobId);
     if (!job) return;
-
+ 
     if (e.target.classList.contains('job-title')) {
       job.name = e.target.textContent.trim() || 'Untitled Job';
       save();
@@ -3548,7 +3933,7 @@
     } else if (e.target.classList.contains('job-code')) {
       job.code = e.target.textContent.trim() || 'NO-CODE';
       save();
-      render();  // re-render so sidebar/calendar reflect the new code
+      render();
     } else if (e.target.classList.contains('task-text')) {
       const taskId = e.target.closest('.task').dataset.taskId;
       const task = job.tasks.find(t => t.id === taskId);
@@ -3558,14 +3943,14 @@
       }
     }
   }, true);
-
+ 
   jobAreaEl.addEventListener('keydown', e => {
     if (e.target.hasAttribute('contenteditable') && e.key === 'Enter') {
       e.preventDefault();
       e.target.blur();
     }
   });
-
+ 
   jobAreaEl.addEventListener('submit', e => {
     if (e.target.matches('[data-action="add-task"]')) {
       e.preventDefault();
@@ -3585,7 +3970,8 @@
       save(); render();
     }
   });
-
+ 
+ 
   // ========= FILTERS =========
   document.getElementById('filter-group').addEventListener('click', e => {
     const btn = e.target.closest('.filter-btn');
@@ -3595,25 +3981,21 @@
     currentFilter = btn.dataset.filter;
     render();
   });
-
+ 
+ 
   // ========= LAYOUT TOGGLE =========
   function applyLayout(layout) {
     currentLayout = layout;
     localStorage.setItem(LAYOUT_KEY, layout);
-
-    // Update layout toggle buttons
     document.querySelectorAll('.layout-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.layout === layout);
     });
-
-    // Show the right layout panel
     document.querySelectorAll('.layout-panel').forEach(p => {
       p.classList.toggle('active', p.dataset.layoutPanel === layout);
     });
-
     render();
   }
-
+ 
   document.getElementById('layout-toggle').addEventListener('click', e => {
     const btn = e.target.closest('.layout-btn');
     if (!btn) return;
@@ -3621,30 +4003,18 @@
     if (target === currentLayout) return;
     applyLayout(target);
   });
-
-  // Sidebar clicks — select job, or add new job
+ 
   focusSidebar.addEventListener('click', e => {
-    // New job button
-    if (e.target.closest('#focus-add-btn')) {
-      openJobModal();
-      return;
-    }
-    // Job selection
+    if (e.target.closest('#focus-add-btn')) { openJobModal(); return; }
     const item = e.target.closest('.focus-job-item');
-    if (item) {
-      selectedJobId = item.dataset.jobId;
-      renderFocus();
-    }
+    if (item) { selectedJobId = item.dataset.jobId; renderFocus(); }
   });
-
-  // Mobile back button (delegated since it's in dynamic content)
+ 
   focusDetail.addEventListener('click', e => {
-    if (e.target.closest('#focus-back-btn')) {
-      selectedJobId = null;
-      renderFocus();
-    }
+    if (e.target.closest('#focus-back-btn')) { selectedJobId = null; renderFocus(); }
   });
-
+ 
+ 
   // ========= NEW JOB MODAL =========
   const modal = document.getElementById('modal-job');
   function openJobModal() {
@@ -3655,11 +4025,11 @@
     setTimeout(() => document.getElementById('new-job-code').focus(), 50);
   }
   function closeJobModal() { modal.classList.remove('open'); }
-
+ 
   document.getElementById('btn-add-job').addEventListener('click', openJobModal);
   document.getElementById('job-cancel').addEventListener('click', closeJobModal);
   modal.addEventListener('click', e => { if (e.target === modal) closeJobModal(); });
-
+ 
   document.getElementById('job-save').addEventListener('click', () => {
     const code = document.getElementById('new-job-code').value.trim();
     const name = document.getElementById('new-job-name').value.trim();
@@ -3667,34 +4037,37 @@
     if (!code) { alert('Job number required.'); return; }
     if (!name) { alert('Project name required.'); return; }
     state.jobs.push({
-      id: 'job_' + Date.now(),
-      name,
-      client,
-      code,
+      id: 'job_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+      name, client, code,
       color: pickNextColor(),
       tasks: []
     });
     save(); closeJobModal(); render();
   });
-
+ 
+ 
   // ========= RESET =========
   document.getElementById('btn-reset').addEventListener('click', async () => {
     if (!confirm('Delete all jobs and tasks? This cannot be undone.')) return;
     if (!currentUser) return;
     setSyncStatus('saving', 'Resetting...');
     try {
-      await sb.from('tasks').delete().eq('user_id', currentUser.id);
-      await sb.from('jobs').delete().eq('user_id', currentUser.id);
+      const t = await sb.from('tasks').delete().eq('user_id', currentUser.id);
+      if (t.error) throw new Error('Delete tasks: ' + t.error.message);
+      const j = await sb.from('jobs').delete().eq('user_id', currentUser.id);
+      if (j.error) throw new Error('Delete jobs: ' + j.error.message);
       state.jobs = [];
       jobCounter = 0;
       render();
       setSyncStatus('synced', 'Reset');
     } catch (e) {
-      console.error(e);
+      console.error('Reset failed:', e);
       setSyncStatus('error', 'Reset failed');
+      showError('Reset failed', e.message || String(e));
     }
   });
-
+ 
+ 
   // ========= CLOCK =========
   function tick() {
     const now = new Date();
@@ -3703,18 +4076,16 @@
     const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
     const dateEl = document.getElementById('date');
     const timeEl = document.getElementById('time');
-    const syncEl = document.getElementById('sync-time');
     if (dateEl) dateEl.textContent = date;
     if (timeEl) timeEl.textContent = time;
-    if (syncEl) syncEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
   }
   tick(); setInterval(tick, 1000);
-
+ 
+ 
   // ========= COLOR PICKER =========
   function openColorPicker(anchor, job) {
-    // Remove any existing picker
     document.querySelectorAll('.color-picker-popover').forEach(p => p.remove());
-
+ 
     const pop = document.createElement('div');
     pop.className = 'color-picker-popover';
     pop.innerHTML = `
@@ -3730,8 +4101,7 @@
       </label>
     `;
     document.body.appendChild(pop);
-
-    // Position below anchor
+ 
     const rect = anchor.getBoundingClientRect();
     const popRect = pop.getBoundingClientRect();
     let left = rect.right - popRect.width;
@@ -3739,22 +4109,15 @@
     if (left + popRect.width > window.innerWidth - 12) left = window.innerWidth - popRect.width - 12;
     pop.style.left = left + 'px';
     pop.style.top = (rect.bottom + window.scrollY + 8) + 'px';
-
-    // Swatch click
+ 
     pop.addEventListener('click', e => {
       const sw = e.target.closest('.picker-swatch');
-      if (sw) {
-        job.color = sw.dataset.color;
-        save(); pop.remove(); render();
-      }
+      if (sw) { job.color = sw.dataset.color; save(); pop.remove(); render(); }
     });
-    // Custom color input
     pop.querySelector('input[type="color"]').addEventListener('change', e => {
-      job.color = e.target.value;
-      save(); pop.remove(); render();
+      job.color = e.target.value; save(); pop.remove(); render();
     });
-
-    // Dismiss on outside click
+ 
     const dismiss = (ev) => {
       if (!pop.contains(ev.target) && ev.target !== anchor) {
         pop.remove();
@@ -3763,39 +4126,40 @@
     };
     setTimeout(() => document.addEventListener('click', dismiss, true), 0);
   }
-
+ 
+ 
   // ========= VIEW SWITCHING =========
   const viewTabs = document.getElementById('view-tabs');
   const viewPanels = document.querySelectorAll('[data-view-panel]');
   let currentView = 'dashboard';
-
+ 
   viewTabs.addEventListener('click', e => {
     const tab = e.target.closest('.view-tab');
     if (!tab) return;
     const target = tab.dataset.view;
     if (target === currentView) return;
-
+ 
     document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('active', t.dataset.view === target));
     viewPanels.forEach(p => p.classList.toggle('active', p.dataset.viewPanel === target));
     currentView = target;
-
+ 
     if (target === 'calendar') renderCalendar();
   });
-
+ 
+ 
   // ========= CALENDAR =========
   const calBody = document.getElementById('cal-body');
   const calTitle = document.getElementById('cal-range-title');
   const calScale = document.getElementById('cal-scale');
   let calScaleMode = 'month';
-  let calAnchor = new Date(); // the reference date for the current view
-  calAnchor.setHours(0,0,0,0);
-
+  let calAnchor = new Date(); calAnchor.setHours(0,0,0,0);
+ 
   const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const MONTH_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
   const DOW_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const DOW_SHORT = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
   const DOW_MINI = ['S','M','T','W','T','F','S'];
-
+ 
   function startOfWeek(d) {
     const x = new Date(d); x.setHours(0,0,0,0);
     x.setDate(x.getDate() - x.getDay());
@@ -3810,8 +4174,7 @@
   function sameDay(a, b) {
     return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
   }
-
-  // Build a map: isoDate -> array of {task, job}
+ 
   function buildTaskMap() {
     const map = new Map();
     state.jobs.forEach(job => {
@@ -3821,7 +4184,6 @@
         map.get(task.deadline).push({ task, job });
       });
     });
-    // sort each day by priority weight, then job name
     const prioWeight = { critical: 0, high: 1, medium: 2, low: 3 };
     map.forEach(arr => arr.sort((a, b) => {
       const pa = prioWeight[a.task.priority] ?? 9;
@@ -3831,7 +4193,7 @@
     }));
     return map;
   }
-
+ 
   calScale.addEventListener('click', e => {
     const btn = e.target.closest('.scale-btn');
     if (!btn) return;
@@ -3839,18 +4201,14 @@
     document.querySelectorAll('.scale-btn').forEach(b => b.classList.toggle('active', b.dataset.scale === calScaleMode));
     renderCalendar();
   });
-
-  document.getElementById('cal-prev').addEventListener('click', () => {
-    stepCalendar(-1);
-  });
-  document.getElementById('cal-next').addEventListener('click', () => {
-    stepCalendar(1);
-  });
+ 
+  document.getElementById('cal-prev').addEventListener('click', () => stepCalendar(-1));
+  document.getElementById('cal-next').addEventListener('click', () => stepCalendar(1));
   document.getElementById('cal-today').addEventListener('click', () => {
     calAnchor = new Date(); calAnchor.setHours(0,0,0,0);
     renderCalendar();
   });
-
+ 
   function stepCalendar(dir) {
     const d = new Date(calAnchor);
     if (calScaleMode === 'day')   d.setDate(d.getDate() + dir);
@@ -3860,25 +4218,23 @@
     calAnchor = d;
     renderCalendar();
   }
-
+ 
   function renderCalendar() {
     if (calScaleMode === 'day') renderCalDay();
     else if (calScaleMode === 'week') renderCalWeek();
     else if (calScaleMode === 'month') renderCalMonth();
     else renderCalYear();
   }
-
-  // ----- DAY VIEW -----
+ 
   function renderCalDay() {
     const d = calAnchor;
     calTitle.textContent = `${MONTH_SHORT[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-
     const iso = isoDate(d);
     const map = buildTaskMap();
     const items = map.get(iso) || [];
     const today = new Date(); today.setHours(0,0,0,0);
     const isToday = sameDay(d, today);
-
+ 
     const rows = items.map(({task, job}) => `
       <div class="cal-day-row ${task.done ? 'done' : ''}" data-priority="${task.priority}" data-task-id="${task.id}" data-job-id="${job.id}" style="--job-color: ${job.color};">
         <div class="row-check" data-action="cal-toggle"></div>
@@ -3889,7 +4245,7 @@
         <div class="prio-tag">${task.priority.toUpperCase()}</div>
       </div>
     `).join('');
-
+ 
     calBody.innerHTML = `
       <div class="cal-day-view">
         <div class="cal-day-header">
@@ -3906,8 +4262,7 @@
       </div>
     `;
   }
-
-  // ----- WEEK VIEW -----
+ 
   function renderCalWeek() {
     const start = startOfWeek(calAnchor);
     const end = new Date(start); end.setDate(end.getDate() + 6);
@@ -3915,10 +4270,10 @@
     calTitle.textContent = sameMonth
       ? `${MONTH_SHORT[start.getMonth()]} ${start.getDate()}–${end.getDate()}, ${start.getFullYear()}`
       : `${MONTH_SHORT[start.getMonth()]} ${start.getDate()} – ${MONTH_SHORT[end.getMonth()]} ${end.getDate()}, ${end.getFullYear()}`;
-
+ 
     const map = buildTaskMap();
     const today = new Date(); today.setHours(0,0,0,0);
-
+ 
     let html = '<div class="cal-week-grid">';
     for (let i = 0; i < 7; i++) {
       const d = new Date(start); d.setDate(start.getDate() + i);
@@ -3947,28 +4302,21 @@
     html += '</div>';
     calBody.innerHTML = html;
   }
-
-  // ----- MONTH VIEW -----
+ 
   function renderCalMonth() {
-    const d = new Date(calAnchor);
-    d.setDate(1);
+    const d = new Date(calAnchor); d.setDate(1);
     calTitle.textContent = `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
-
     const firstDow = d.getDay();
-    const gridStart = new Date(d);
-    gridStart.setDate(1 - firstDow);
-
+    const gridStart = new Date(d); gridStart.setDate(1 - firstDow);
+ 
     const map = buildTaskMap();
     const today = new Date(); today.setHours(0,0,0,0);
     const curMonth = d.getMonth();
-
+ 
     let html = '<div class="cal-month-grid">';
-    for (let i = 0; i < 7; i++) {
-      html += `<div class="cal-dow-header">${DOW_SHORT[i]}</div>`;
-    }
+    for (let i = 0; i < 7; i++) html += `<div class="cal-dow-header">${DOW_SHORT[i]}</div>`;
     for (let i = 0; i < 42; i++) {
-      const cell = new Date(gridStart);
-      cell.setDate(gridStart.getDate() + i);
+      const cell = new Date(gridStart); cell.setDate(gridStart.getDate() + i);
       const iso = isoDate(cell);
       const items = map.get(iso) || [];
       const otherMonth = cell.getMonth() !== curMonth;
@@ -3976,7 +4324,7 @@
       const maxShow = 3;
       const shown = items.slice(0, maxShow);
       const extra = items.length - shown.length;
-
+ 
       html += `
         <div class="cal-day-cell ${otherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}" data-date="${iso}">
           <div class="cal-day-num">${cell.getDate()}</div>
@@ -3993,31 +4341,24 @@
     html += '</div>';
     calBody.innerHTML = html;
   }
-
-  // ----- YEAR VIEW -----
+ 
   function renderCalYear() {
     const year = calAnchor.getFullYear();
     calTitle.textContent = String(year);
-
     const map = buildTaskMap();
     const today = new Date(); today.setHours(0,0,0,0);
-
-    let html = '<div class="cal-year-grid">';;
+ 
+    let html = '<div class="cal-year-grid">';
     for (let m = 0; m < 12; m++) {
       const first = new Date(year, m, 1);
       const firstDow = first.getDay();
-      const gridStart = new Date(first);
-      gridStart.setDate(1 - firstDow);
-
-      // count tasks in this month
+      const gridStart = new Date(first); gridStart.setDate(1 - firstDow);
+ 
       let monthCount = 0;
       let miniCells = '';
-      for (let i = 0; i < 7; i++) {
-        miniCells += `<div class="mini-dow">${DOW_MINI[i]}</div>`;
-      }
+      for (let i = 0; i < 7; i++) miniCells += `<div class="mini-dow">${DOW_MINI[i]}</div>`;
       for (let i = 0; i < 42; i++) {
-        const cell = new Date(gridStart);
-        cell.setDate(gridStart.getDate() + i);
+        const cell = new Date(gridStart); cell.setDate(gridStart.getDate() + i);
         const iso = isoDate(cell);
         const otherMonth = cell.getMonth() !== m;
         const isToday = sameDay(cell, today);
@@ -4025,7 +4366,6 @@
         const open = items.filter(x => !x.task.done);
         if (!otherMonth) monthCount += items.length;
         const has = !otherMonth && open.length > 0;
-        // Gather up to 3 unique job colors for the day
         let dotsHtml = '';
         if (has) {
           const seen = new Set();
@@ -4038,7 +4378,7 @@
         }
         miniCells += `<div class="mini-day ${otherMonth ? 'other' : ''} ${isToday ? 'today' : ''} ${has ? 'has-tasks' : ''}">${cell.getDate()}${dotsHtml ? `<span class="mini-dots">${dotsHtml}</span>` : ''}</div>`;
       }
-
+ 
       const isCurMonth = today.getFullYear() === year && today.getMonth() === m;
       html += `
         <div class="cal-year-month ${isCurMonth ? 'current' : ''}" data-action="drill-month" data-month="${m}" data-year="${year}">
@@ -4053,10 +4393,8 @@
     html += '</div>';
     calBody.innerHTML = html;
   }
-
-  // ----- CALENDAR EVENT DELEGATION -----
+ 
   calBody.addEventListener('click', e => {
-    // drill from year → month
     const monthDrill = e.target.closest('[data-action="drill-month"]');
     if (monthDrill) {
       const m = parseInt(monthDrill.dataset.month, 10);
@@ -4067,7 +4405,6 @@
       renderCalendar();
       return;
     }
-    // drill from "+N more" in month → day
     const dayDrill = e.target.closest('[data-action="drill-day"]');
     if (dayDrill) {
       calAnchor = new Date(dayDrill.dataset.date + 'T00:00:00');
@@ -4076,7 +4413,6 @@
       renderCalendar();
       return;
     }
-    // click empty day in month/week → drill to day view
     const cell = e.target.closest('.cal-day-cell');
     if (cell && e.target === cell) {
       calAnchor = new Date(cell.dataset.date + 'T00:00:00');
@@ -4085,7 +4421,6 @@
       renderCalendar();
       return;
     }
-    // toggle done from day view
     if (e.target.closest('[data-action="cal-toggle"]')) {
       const row = e.target.closest('.cal-day-row');
       const job = state.jobs.find(j => j.id === row.dataset.jobId);
@@ -4096,7 +4431,6 @@
       save(); renderCalendar(); render();
       return;
     }
-    // click a chip → toggle done
     const chip = e.target.closest('.cal-task-chip:not(.overflow)');
     if (chip) {
       const job = state.jobs.find(j => j.id === chip.dataset.jobId);
@@ -4107,10 +4441,9 @@
       save(); renderCalendar(); render();
     }
   });
-
+ 
+ 
   // ========= INIT =========
-  // Check auth status - if signed in, checkAuth loads data + applies layout.
-  // If not signed in, the auth overlay stays visible until they log in.
   checkAuth();
 </script>
 </body>
