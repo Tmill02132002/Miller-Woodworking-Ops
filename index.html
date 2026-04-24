@@ -3182,7 +3182,16 @@
   }
  
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true }
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      // No-op lock: bypass the default navigator lock which can throw
+      // "another request stole it" on iOS Safari when multiple auth
+      // calls race (checkAuth + onAuthStateChange firing together).
+      // Safe for a single-user app.
+      lock: (name, acquireTimeout, fn) => fn(),
+    }
   });
  
   let currentUser = null;
