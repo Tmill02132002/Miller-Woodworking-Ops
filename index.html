@@ -3588,8 +3588,12 @@
   });
   authEmail.addEventListener('keydown', e => { if (e.key === 'Enter') authSend.click(); });
  
-  // Guard: either checkAuth() OR onAuthStateChange(SIGNED_IN) does the init,
-  // not both. Whichever runs first wins; the other no-ops.
+  // Single source of truth for auth init:
+  // onAuthStateChange fires INITIAL_SESSION on page load after the SDK has
+  // fully resolved the stored session. Doing our queries any earlier
+  // (e.g. by calling getSession() ourselves) can deadlock the SDK's
+  // internal state machine. So we wait for that event and drive
+  // everything from onAuthStateChange.
   let sessionInitialized = false;
   async function initSession(user) {
     if (sessionInitialized) {
@@ -3606,30 +3610,25 @@
     applyLayout(currentLayout);
   }
  
-  async function checkAuth() {
-    try {
-      const { data: { session }, error } = await sb.auth.getSession();
-      if (error) throw error;
-      if (session && session.user) {
-        await initSession(session.user);
-      } else {
-        currentUser = null;
-        authOverlay.classList.remove('hidden');
-        updateSessionIndicator();
-        setSyncStatus('offline', 'Not signed in');
-      }
-    } catch (e) {
-      console.error('Auth check failed:', e);
-      showError('Auth check failed', e.message || String(e),
-        'The app could not determine if you are signed in. Try reloading the page.');
-      setSyncStatus('error', 'Auth error');
-    }
+  function showSignedOut() {
+    currentUser = null;
+    authOverlay.classList.remove('hidden');
+    updateSessionIndicator();
+    setSyncStatus('offline', 'Not signed in');
   }
  
   sb.auth.onAuthStateChange(async (event, session) => {
-    console.log('[auth] state change:', event);
+    console.log('[auth] state change:', event, session ? '(has session)' : '(no session)');
     try {
-      if (event === 'SIGNED_IN' && session && session.user) {
+      if (event === 'INITIAL_SESSION') {
+        // Fires once on page load. If there's a session, init; otherwise show login.
+        if (session && session.user) {
+          await initSession(session.user);
+        } else {
+          showSignedOut();
+        }
+      } else if (event === 'SIGNED_IN' && session && session.user) {
+        // Fires after a fresh login (OTP verification)
         await initSession(session.user);
       } else if (event === 'SIGNED_OUT') {
         sessionInitialized = false;
@@ -4490,7 +4489,10 @@
  
  
   // ========= INIT =========
-  checkAuth();
+  // No eager auth check — onAuthStateChange fires INITIAL_SESSION on page load,
+  // which drives all init. Calling getSession() ourselves here would race
+  // with the SDK's own session resolution and deadlock queries.
+  console.log('[init] waiting for INITIAL_SESSION event…');
 </script>
 </body>
 </html>
