@@ -2106,6 +2106,43 @@
   }
   .cal-day-add-btn:hover { background: var(--red); border-color: var(--red); color: white; }
 
+  /* Drag-to-reschedule (calendar Week + Month) */
+  .cal-task-chip:not(.overflow) {
+    touch-action: none; /* keep iOS from hijacking the long-press as a scroll */
+  }
+  .cal-drag-ghost {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10000;
+    background: var(--bg-2);
+    border: 1px solid var(--red);
+    color: var(--ink-0);
+    padding: 6px 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: var(--r-sm);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    white-space: nowrap;
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transform: translate(-50%, -50%);
+  }
+  .cal-drop-hover {
+    outline: 2px dashed var(--red);
+    outline-offset: -2px;
+    background: rgba(230, 57, 70, 0.06);
+  }
+  body.cal-dragging {
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: grabbing;
+  }
+  .cal-chip-dragging {
+    opacity: 0.45;
+  }
+
   .modal-actions {
     display: flex;
     justify-content: flex-end;
@@ -4642,7 +4679,7 @@
       const items = map.get(iso) || [];
       const isToday = sameDay(d, today);
       html += `
-        <div class="cal-week-col">
+        <div class="cal-week-col" data-date="${iso}">
           <button class="cal-add-btn" data-action="quick-add" data-date="${iso}" title="Add a task to this day">+</button>
           <div class="cal-week-header ${isToday ? 'today' : ''}">
             <span class="dow">${DOW_SHORT[d.getDay()]}</span>
@@ -4802,6 +4839,8 @@
     }
     const chip = e.target.closest('.cal-task-chip:not(.overflow)');
     if (chip) {
+      // Suppress click that fires after a drag-release
+      if (Date.now() - lastDragEnd < 250) return;
       const job = state.jobs.find(j => j.id === chip.dataset.jobId);
       if (!job) return;
       const task = job.tasks.find(t => t.id === chip.dataset.taskId);
@@ -4810,6 +4849,116 @@
       save(); renderCalendar(); render();
     }
   });
+
+  // ========= DRAG-TO-RESCHEDULE (Week + Month views) =========
+  let dragState = null;
+  let lastDragEnd = 0;
+  const LONG_PRESS_MS = 250;
+  const MOVE_CANCEL_PX = 6;
+
+  function findDropTarget(x, y) {
+    const el = document.elementFromPoint(x, y);
+    if (!el) return null;
+    return el.closest('.cal-day-cell:not(.other-month)[data-date], .cal-week-col[data-date]');
+  }
+
+  function armDrag() {
+    if (!dragState) return;
+    dragState.armed = true;
+    try { dragState.srcChip.setPointerCapture(dragState.pointerId); } catch (_) {}
+    const ghost = document.createElement('div');
+    ghost.className = 'cal-drag-ghost';
+    const t = dragState.task;
+    const timePrefix = t.deadline_time ? fmtTime(t.deadline_time) + ' · ' : '';
+    ghost.textContent = timePrefix + t.text;
+    ghost.style.left = dragState.lastX + 'px';
+    ghost.style.top = dragState.lastY + 'px';
+    document.body.appendChild(ghost);
+    dragState.ghost = ghost;
+    document.body.classList.add('cal-dragging');
+    dragState.srcChip.classList.add('cal-chip-dragging');
+  }
+
+  function cleanupDrag() {
+    if (!dragState) return;
+    if (dragState.timer) clearTimeout(dragState.timer);
+    if (dragState.ghost) dragState.ghost.remove();
+    if (dragState.srcChip) dragState.srcChip.classList.remove('cal-chip-dragging');
+    document.body.classList.remove('cal-dragging');
+    document.querySelectorAll('.cal-drop-hover').forEach(el => el.classList.remove('cal-drop-hover'));
+    dragState = null;
+  }
+
+  calBody.addEventListener('pointerdown', e => {
+    if (calScaleMode !== 'week' && calScaleMode !== 'month') return;
+    if (e.button !== undefined && e.button !== 0) return; // left mouse only
+    const chip = e.target.closest('.cal-task-chip:not(.overflow)');
+    if (!chip) return;
+    const job = state.jobs.find(j => j.id === chip.dataset.jobId);
+    if (!job) return;
+    const task = job.tasks.find(t => t.id === chip.dataset.taskId);
+    if (!task) return;
+    cleanupDrag(); // any leftover state
+    dragState = {
+      task, job,
+      srcChip: chip,
+      pointerId: e.pointerId,
+      startX: e.clientX, startY: e.clientY,
+      lastX: e.clientX, lastY: e.clientY,
+      armed: false,
+      timer: setTimeout(armDrag, LONG_PRESS_MS),
+    };
+  });
+
+  window.addEventListener('pointermove', e => {
+    if (!dragState) return;
+    if (e.pointerId !== dragState.pointerId) return;
+    dragState.lastX = e.clientX;
+    dragState.lastY = e.clientY;
+    if (!dragState.armed) {
+      const dx = e.clientX - dragState.startX;
+      const dy = e.clientY - dragState.startY;
+      if (Math.abs(dx) > MOVE_CANCEL_PX || Math.abs(dy) > MOVE_CANCEL_PX) {
+        // Treat as a scroll/scrub, not a drag — cancel arming
+        clearTimeout(dragState.timer);
+        cleanupDrag();
+      }
+      return;
+    }
+    e.preventDefault();
+    dragState.ghost.style.left = e.clientX + 'px';
+    dragState.ghost.style.top = e.clientY + 'px';
+    document.querySelectorAll('.cal-drop-hover').forEach(el => el.classList.remove('cal-drop-hover'));
+    const target = findDropTarget(e.clientX, e.clientY);
+    if (target) target.classList.add('cal-drop-hover');
+  });
+
+  function endDrag(e, didCancel) {
+    if (!dragState) return;
+    if (e && e.pointerId !== dragState.pointerId) return;
+    if (dragState.armed) {
+      lastDragEnd = Date.now();
+      if (!didCancel) {
+        const target = findDropTarget(e.clientX, e.clientY);
+        if (target) {
+          const newDate = target.dataset.date;
+          if (newDate && newDate !== dragState.task.deadline) {
+            dragState.task.deadline = newDate;
+            dragState.task.notified_at = null;
+            save();
+            cleanupDrag();
+            renderCalendar();
+            render();
+            return;
+          }
+        }
+      }
+    }
+    cleanupDrag();
+  }
+
+  window.addEventListener('pointerup', e => endDrag(e, false));
+  window.addEventListener('pointercancel', e => endDrag(e, true));
  
  
   // ========= INIT =========
