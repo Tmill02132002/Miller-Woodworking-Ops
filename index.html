@@ -1674,18 +1674,18 @@
 
   /* tasks list */
   .tasks-list {
-    padding: 10px;
-    min-height: 80px;
+    padding: 8px 10px;
+    min-height: 60px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
   }
 
   .task {
     background: var(--bg-2);
     border: 1px solid var(--line);
     border-left: 3px solid var(--priority-color, var(--ink-3));
-    padding: 10px 12px;
+    padding: 6px 12px;
     display: grid;
     grid-template-columns: auto 1fr auto auto;
     gap: 12px;
@@ -2457,12 +2457,12 @@
     .job-title { font-size: 18px; }
     .job-stats { padding: 10px 14px; gap: 10px; }
     .stat-pill { font-size: 9px; }
-    .tasks-list { padding: 8px; }
+    .tasks-list { padding: 6px 8px; gap: 4px; }
     .task {
       grid-template-columns: auto 1fr auto;
       grid-template-rows: auto auto;
-      gap: 8px 10px;
-      padding: 9px 10px;
+      gap: 4px 10px;
+      padding: 6px 10px;
     }
     .task-text { font-size: 14px; grid-column: 2 / 3; grid-row: 1; }
     .task-check { grid-column: 1; grid-row: 1 / 3; align-self: start; margin-top: 2px; }
@@ -3758,6 +3758,27 @@
     if (filter === 'month') return d >= 0 && d <= 30;
     return true;
   }
+  // Sort: dated tasks first (earliest deadline), no-deadline last.
+  // Within the same date: priority (critical -> low), then time-of-day if set.
+  const PRIO_W = { critical: 0, high: 1, medium: 2, low: 3 };
+  function sortTasks(tasks) {
+    return [...tasks].sort((a, b) => {
+      const aNo = !a.deadline, bNo = !b.deadline;
+      if (aNo && !bNo) return 1;
+      if (!aNo && bNo) return -1;
+      if (!aNo && !bNo && a.deadline !== b.deadline) {
+        return a.deadline < b.deadline ? -1 : 1;
+      }
+      const pa = PRIO_W[a.priority] ?? 9;
+      const pb = PRIO_W[b.priority] ?? 9;
+      if (pa !== pb) return pa - pb;
+      const at = a.deadline_time || '', bt = b.deadline_time || '';
+      if (at && bt) return at < bt ? -1 : 1;
+      if (at) return -1;
+      if (bt) return 1;
+      return 0;
+    });
+  }
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({
       '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
@@ -3776,7 +3797,7 @@
   let selectedJobId = null;
  
   function jobCardHtml(job) {
-    const visibleTasks = job.tasks.filter(t => matchesFilter(t, currentFilter));
+    const visibleTasks = sortTasks(job.tasks).filter(t => matchesFilter(t, currentFilter));
     const total = job.tasks.length;
     const done = job.tasks.filter(t => t.done).length;
     const pct = total ? Math.round((done/total) * 100) : 0;
