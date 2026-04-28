@@ -2025,7 +2025,8 @@
     margin-bottom: 6px;
   }
 
-  .field input {
+  .field input,
+  .field select {
     width: 100%;
     font-family: 'Inter', sans-serif;
     font-size: 14px;
@@ -2035,9 +2036,75 @@
     padding: 10px 12px;
     outline: none;
   }
-  .field input:focus {
+  .field input:focus,
+  .field select:focus {
     border-color: var(--red);
   }
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .field-row .field { margin-bottom: 16px; }
+
+  /* Calendar quick-add button — small + on each day cell */
+  .cal-add-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    color: var(--ink-2);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    border-radius: var(--r-sm);
+    opacity: 0;
+    transition: opacity 0.15s, background 0.15s, color 0.15s;
+    padding: 0;
+  }
+  .cal-day-cell { position: relative; }
+  .cal-day-cell:hover .cal-add-btn,
+  .cal-add-btn:focus {
+    opacity: 1;
+  }
+  .cal-add-btn:hover {
+    background: var(--red);
+    color: white;
+    border-color: var(--red);
+  }
+  /* Touch devices: always show the + button (no hover) */
+  @media (hover: none) {
+    .cal-add-btn { opacity: 0.65; }
+    .cal-day-cell.other-month .cal-add-btn { opacity: 0; pointer-events: none; }
+  }
+  /* Week view: column is the cell; same absolute + reveal-on-hover pattern */
+  .cal-week-col { position: relative; }
+  .cal-week-col:hover .cal-add-btn { opacity: 1; }
+  .cal-week-col .cal-add-btn { top: 6px; right: 6px; }
+  /* Day view button lives in header */
+  .cal-day-add-btn {
+    margin-left: auto;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    color: var(--ink-1);
+    padding: 8px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .cal-day-add-btn:hover { background: var(--red); border-color: var(--red); color: white; }
 
   .modal-actions {
     display: flex;
@@ -3171,6 +3238,41 @@
   </div>
 </div>
 
+<!-- Quick Add Task Modal (from calendar) -->
+<div class="modal-backdrop" id="modal-quick-task">
+  <div class="modal">
+    <h3>New Task</h3>
+    <div class="modal-sub" id="quick-task-sub">// Pick a job for this date</div>
+    <div class="field">
+      <label>Task</label>
+      <input type="text" id="quick-task-text" placeholder="Task description" maxlength="140" />
+    </div>
+    <div class="field">
+      <label>Job</label>
+      <select id="quick-task-job"></select>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Priority</label>
+        <select id="quick-task-priority">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+          <option value="critical">Critical</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Time (optional)</label>
+        <input type="time" id="quick-task-time" lang="en-US" />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="quick-task-cancel">Cancel</button>
+      <button class="btn-primary" id="quick-task-save">Add Task</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // =============================================================================
   // MILLER WOODWORKING OPS — hardened data layer + diagnostic UI
@@ -4237,6 +4339,58 @@
     });
     save(); closeJobModal(); render();
   });
+
+  // ========= QUICK-ADD TASK MODAL (from calendar) =========
+  const quickModal = document.getElementById('modal-quick-task');
+  let quickAddDate = '';
+  function openQuickTaskModal(iso) {
+    if (!state.jobs.length) {
+      showError('No jobs yet', 'Create a job first before adding a task to the calendar. Use the "New Job" button on the dashboard.');
+      return;
+    }
+    quickAddDate = iso;
+    const sub = document.getElementById('quick-task-sub');
+    try {
+      const d = new Date(iso + 'T00:00:00');
+      const label = d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+      sub.textContent = `// ${label}`;
+    } catch (_) { sub.textContent = `// ${iso}`; }
+    const jobSel = document.getElementById('quick-task-job');
+    jobSel.innerHTML = state.jobs.map(j =>
+      `<option value="${j.id}">${escapeHtml(j.code ? j.code + ' · ' : '')}${escapeHtml(j.name)}</option>`
+    ).join('');
+    document.getElementById('quick-task-text').value = '';
+    document.getElementById('quick-task-priority').value = 'medium';
+    document.getElementById('quick-task-time').value = '';
+    quickModal.classList.add('open');
+    setTimeout(() => document.getElementById('quick-task-text').focus(), 50);
+  }
+  function closeQuickTaskModal() { quickModal.classList.remove('open'); }
+  document.getElementById('quick-task-cancel').addEventListener('click', closeQuickTaskModal);
+  quickModal.addEventListener('click', e => { if (e.target === quickModal) closeQuickTaskModal(); });
+  document.getElementById('quick-task-save').addEventListener('click', () => {
+    const text = document.getElementById('quick-task-text').value.trim();
+    const jobId = document.getElementById('quick-task-job').value;
+    const priority = document.getElementById('quick-task-priority').value || 'medium';
+    const deadline_time = document.getElementById('quick-task-time').value || '';
+    if (!text) { document.getElementById('quick-task-text').focus(); return; }
+    const job = state.jobs.find(j => j.id === jobId);
+    if (!job) { showError('Job not found', 'The selected job no longer exists. Pick another.'); return; }
+    job.tasks.push({
+      id: 't_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+      text,
+      priority,
+      deadline: quickAddDate,
+      deadline_time,
+      reminder_offset: '',
+      notified_at: null,
+      done: false,
+    });
+    save();
+    closeQuickTaskModal();
+    renderCalendar();
+    render();
+  });
  
  
   // ========= RESET =========
@@ -4458,6 +4612,10 @@
             <div class="month-big">${MONTH_NAMES[d.getMonth()]} · ${d.getFullYear()}</div>
             <div class="task-count">${items.length} task${items.length === 1 ? '' : 's'}${isToday ? ' · Today' : ''}</div>
           </div>
+          <button class="cal-day-add-btn" data-action="quick-add" data-date="${iso}" title="Add a task to this day">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            Add Task
+          </button>
         </div>
         ${items.length === 0
           ? `<div class="cal-empty">// NO TASKS SCHEDULED</div>`
@@ -4485,6 +4643,7 @@
       const isToday = sameDay(d, today);
       html += `
         <div class="cal-week-col">
+          <button class="cal-add-btn" data-action="quick-add" data-date="${iso}" title="Add a task to this day">+</button>
           <div class="cal-week-header ${isToday ? 'today' : ''}">
             <span class="dow">${DOW_SHORT[d.getDay()]}</span>
             <span class="daynum">${d.getDate()}</span>
@@ -4530,6 +4689,7 @@
  
       html += `
         <div class="cal-day-cell ${otherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}" data-date="${iso}">
+          ${otherMonth ? '' : `<button class="cal-add-btn" data-action="quick-add" data-date="${iso}" title="Add a task to this day">+</button>`}
           <div class="cal-day-num">${cell.getDate()}</div>
           ${shown.map(({task, job}) => `
             <div class="cal-task-chip month ${task.done ? 'done' : ''}" data-priority="${task.priority}" data-task-id="${task.id}" data-job-id="${job.id}" style="--job-color:${job.color};" title="${escapeHtml(job.name)} · ${escapeHtml(task.text)}${task.deadline_time ? ' · ' + fmtTime(task.deadline_time) : ''}">
@@ -4598,6 +4758,12 @@
   }
  
   calBody.addEventListener('click', e => {
+    const quickAdd = e.target.closest('[data-action="quick-add"]');
+    if (quickAdd) {
+      e.stopPropagation();
+      openQuickTaskModal(quickAdd.dataset.date);
+      return;
+    }
     const monthDrill = e.target.closest('[data-action="drill-month"]');
     if (monthDrill) {
       const m = parseInt(monthDrill.dataset.month, 10);
