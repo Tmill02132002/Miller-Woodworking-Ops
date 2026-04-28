@@ -26,7 +26,7 @@
 <title>Miller Woodworking // Operations Command</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
@@ -108,7 +108,7 @@
   }
 
   .mono { font-family: 'JetBrains Mono', monospace; }
-  .display { font-family: 'Oswald', sans-serif; letter-spacing: 0.02em; }
+  .display { font-family: 'Inter', sans-serif; letter-spacing: 0.02em; }
 
   /* ============ TOP BAR ============ */
   .topbar {
@@ -152,7 +152,7 @@
   }
 
   .brand-text .title {
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-weight: 600;
     font-size: 15px;
     letter-spacing: 0.14em;
@@ -297,7 +297,7 @@
   }
 
   .cal-range-title {
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 22px;
     font-weight: 500;
     letter-spacing: 0.05em;
@@ -582,7 +582,7 @@
   }
 
   .cal-week-header .daynum {
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 22px;
     font-weight: 500;
     color: var(--ink-0);
@@ -634,7 +634,7 @@
   }
 
   .cal-day-big {
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 72px;
     font-weight: 500;
     line-height: 0.9;
@@ -648,7 +648,7 @@
   }
 
   .cal-day-meta .dow-big {
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 26px;
     color: var(--ink-0);
     letter-spacing: 0.04em;
@@ -793,7 +793,7 @@
   }
 
   .cal-year-title {
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 16px;
     font-weight: 500;
     letter-spacing: 0.08em;
@@ -924,7 +924,7 @@
   }
 
   .metric .value {
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 38px;
     font-weight: 500;
     line-height: 1;
@@ -1192,7 +1192,7 @@
     min-width: 0;
   }
   .focus-job-item .job-info .name {
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 15px;
     font-weight: 500;
     color: var(--ink-0);
@@ -1315,7 +1315,7 @@
   }
 
   .focus-welcome-title {
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 28px;
     font-weight: 500;
     letter-spacing: 0.08em;
@@ -1559,7 +1559,7 @@
   }
 
   .job-title {
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 22px;
     font-weight: 600;
     color: var(--ink-0);
@@ -1957,7 +1957,7 @@
   }
 
   .modal h3 {
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 20px;
     font-weight: 600;
     letter-spacing: 0.08em;
@@ -2186,7 +2186,7 @@
   }
   .auth-logo svg { width: 100%; height: 100%; }
   .auth-title {
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 24px;
     font-weight: 600;
     letter-spacing: 0.1em;
@@ -2266,7 +2266,7 @@
     margin-bottom: 10px;
   }
   .auth-sent-title {
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 18px;
     font-weight: 500;
     letter-spacing: 0.06em;
@@ -2716,7 +2716,7 @@
 }
 .error-banner-body { flex: 1; min-width: 0; }
 .error-banner-title {
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.15em;
@@ -3038,6 +3038,7 @@
       <button class="filter-btn" data-filter="week">This Week <span class="count" id="c-week">0</span></button>
       <button class="filter-btn" data-filter="month">This Month <span class="count" id="c-month">0</span></button>
       <button class="filter-btn" data-filter="nodate">No Deadline <span class="count" id="c-nodate">0</span></button>
+      <button class="filter-btn" data-filter="completed">Completed <span class="count" id="c-completed">0</span></button>
     </div>
     <div class="control-actions">
       <div class="layout-toggle" id="layout-toggle" title="Switch layout">
@@ -3183,7 +3184,7 @@
  
  
   // ========= LOGO =========
-  document.getElementById('brand-logo').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 120" preserveAspectRatio="xMidYMid meet"><g transform="translate(130, 30)"><line x1="0" y1="-30" x2="0" y2="30" stroke="currentColor" stroke-width="2.5"/><line x1="-30" y1="0" x2="30" y2="0" stroke="currentColor" stroke-width="2.5"/><g fill="none" stroke="#e63946" stroke-width="6"><path d="M -14.5 -4 A 15 15 0 0 1 -4 -14.5"/><path d="M 4 -14.5 A 15 15 0 0 1 14.5 -4"/><path d="M 14.5 4 A 15 15 0 0 1 4 14.5"/><path d="M -4 14.5 A 15 15 0 0 1 -14.5 4"/></g><circle cx="0" cy="0" r="3.5" fill="#e63946"/></g><text x="130" y="100" text-anchor="middle" font-family="Oswald, Impact, sans-serif" font-weight="700" font-size="44" letter-spacing="4" fill="currentColor">MILLER</text></svg>`;
+  document.getElementById('brand-logo').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 120" preserveAspectRatio="xMidYMid meet"><g transform="translate(130, 30)"><line x1="0" y1="-30" x2="0" y2="30" stroke="currentColor" stroke-width="2.5"/><line x1="-30" y1="0" x2="30" y2="0" stroke="currentColor" stroke-width="2.5"/><g fill="none" stroke="#e63946" stroke-width="6"><path d="M -14.5 -4 A 15 15 0 0 1 -4 -14.5"/><path d="M 4 -14.5 A 15 15 0 0 1 14.5 -4"/><path d="M 14.5 4 A 15 15 0 0 1 4 14.5"/><path d="M -4 14.5 A 15 15 0 0 1 -14.5 4"/></g><circle cx="0" cy="0" r="3.5" fill="#e63946"/></g><text x="130" y="100" text-anchor="middle" font-family="Impact, sans-serif" font-weight="700" font-size="44" letter-spacing="4" fill="currentColor">MILLER</text></svg>`;
  
   document.getElementById('auth-logo').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><g transform="translate(50, 50)"><line x1="0" y1="-36" x2="0" y2="36" stroke="currentColor" stroke-width="3"/><line x1="-36" y1="0" x2="36" y2="0" stroke="currentColor" stroke-width="3"/><g fill="none" stroke="#e63946" stroke-width="7"><path d="M -18 -5 A 19 19 0 0 1 -5 -18"/><path d="M 5 -18 A 19 19 0 0 1 18 -5"/><path d="M 18 5 A 19 19 0 0 1 5 18"/><path d="M -5 18 A 19 19 0 0 1 -18 5"/></g><circle cx="0" cy="0" r="4.5" fill="#e63946"/></g></svg>`;
  
@@ -3740,11 +3741,14 @@
     return fmtDate(iso, time);
   }
   function matchesFilter(task, filter) {
+    if (filter === 'completed') return !!task.done;
+    // Hide completed tasks from every other filter — they live behind the "Completed" pill
+    if (task.done) return false;
     if (filter === 'all') return true;
     const d = daysFromNow(task.deadline);
     if (filter === 'nodate') return d === null;
     if (d === null) return false;
-    if (filter === 'overdue') return d < 0 && !task.done;
+    if (filter === 'overdue') return d < 0;
     if (filter === 'today') return d === 0;
     if (filter === 'week') return d >= 0 && d <= 7;
     if (filter === 'month') return d >= 0 && d <= 30;
@@ -3810,7 +3814,7 @@
           <option value="critical">CRITICAL</option>
         </select>
         <input type="date" name="deadline" />
-        <input type="time" name="deadline_time" title="Optional time" />
+        <input type="time" name="deadline_time" lang="en-US" title="Optional time" />
         <button type="submit" class="add-btn" title="Add task">+</button>
       </form>
     `;
@@ -3955,7 +3959,7 @@
  
   function updateFilterCounts() {
     const allTasks = state.jobs.flatMap(j => j.tasks);
-    const filters = ['all','overdue','today','week','month','nodate'];
+    const filters = ['all','overdue','today','week','month','nodate','completed'];
     filters.forEach(f => {
       const n = allTasks.filter(t => matchesFilter(t, f)).length;
       const el = document.getElementById('c-' + f);
@@ -4016,6 +4020,7 @@
       dateInput.style.cssText = inputStyle;
       const timeInput = document.createElement('input');
       timeInput.type = 'time';
+      timeInput.lang = 'en-US';
       timeInput.value = task.deadline_time || '';
       timeInput.title = 'Optional time';
       timeInput.style.cssText = inputStyle + 'margin-left:4px;';
@@ -4314,6 +4319,7 @@
     state.jobs.forEach(job => {
       job.tasks.forEach(task => {
         if (!task.deadline) return;
+        if (task.done) return;
         if (!map.has(task.deadline)) map.set(task.deadline, []);
         map.get(task.deadline).push({ task, job });
       });
