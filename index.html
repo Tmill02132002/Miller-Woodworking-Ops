@@ -1567,6 +1567,87 @@
     padding: 0;
   }
 
+  /* Bell button on each task pill */
+  .task-bell {
+    background: transparent;
+    border: none;
+    padding: 2px;
+    margin: 0;
+    cursor: pointer;
+    color: var(--ink-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, transform 0.15s;
+    flex-shrink: 0;
+    line-height: 0;
+  }
+  .task-bell:hover { color: var(--ink-1); transform: scale(1.1); }
+  .task-bell.active { color: var(--priority-color, var(--amber)); }
+  .task-bell.active:hover { transform: scale(1.1); }
+
+  /* Reminder picker popover (modeled on the color picker) */
+  .reminder-picker-popover {
+    position: absolute;
+    z-index: 200;
+    background: var(--bg-1);
+    border: 1px solid var(--line-bright);
+    padding: 10px;
+    min-width: 200px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--red) inset;
+    animation: popIn 0.12s ease-out;
+  }
+  .reminder-picker-popover::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: -1px;
+    width: 10px; height: 10px;
+    border-top: 2px solid var(--red);
+    border-left: 2px solid var(--red);
+  }
+  .reminder-picker-popover .picker-label {
+    margin: 2px 4px 8px;
+  }
+  .reminder-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    color: var(--ink-1);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 9px 12px;
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    transition: background 0.1s, color 0.1s;
+  }
+  .reminder-option + .reminder-option { margin-top: 2px; }
+  .reminder-option:hover:not(.disabled) { background: var(--bg-3); }
+  .reminder-option.active {
+    background: color-mix(in srgb, var(--red) 18%, transparent);
+    color: var(--ink-0);
+  }
+  .reminder-option.active::before {
+    content: '✓ ';
+    color: var(--red);
+    font-weight: 700;
+  }
+  .reminder-option.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .reminder-option-hint {
+    display: block;
+    font-size: 10px;
+    color: var(--ink-2);
+    margin-top: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
   .job-header {
     padding: 18px 20px 14px;
     border-bottom: 1px solid var(--line);
@@ -1723,7 +1804,7 @@
     border-radius: 999px;
     padding: 7px 14px 7px 10px;
     display: grid;
-    grid-template-columns: auto 1fr auto auto auto;
+    grid-template-columns: auto 1fr auto auto auto auto;
     gap: 10px;
     align-items: center;
     transition: background 0.15s, border-color 0.15s;
@@ -2611,18 +2692,23 @@
     .job-title { font-size: 18px; }
     .job-stats { padding: 10px 14px; gap: 10px; }
     .stat-pill { font-size: 9px; }
-    .tasks-list { padding: 6px 8px; gap: 4px; }
+    .tasks-list { padding: 6px 8px; gap: 5px; }
     .task {
-      grid-template-columns: auto 1fr auto auto auto;
-      grid-template-rows: 1fr;
-      gap: 6px;
+      grid-template-columns: auto 1fr auto auto;
+      grid-template-rows: auto auto;
+      grid-template-areas:
+        "check text     text    del"
+        "check priority deadline bell";
+      gap: 4px 8px;
       padding: 6px 12px 6px 8px;
+      border-radius: 22px;
     }
-    .task-text { font-size: 14px; grid-column: 2; grid-row: 1; }
-    .task-check { grid-column: 1; grid-row: 1; align-self: center; margin-top: 0; }
-    .task-priority-tag { grid-column: 3; grid-row: 1; justify-self: end; margin: 0; font-size: 8px; padding: 2px 5px; }
-    .task-deadline { grid-column: 4; grid-row: 1; justify-self: end; font-size: 10px; }
-    .task-del { grid-column: 5; grid-row: 1; }
+    .task-check { grid-area: check; align-self: center; margin-top: 0; }
+    .task-text { grid-area: text; font-size: 14px; }
+    .task-del { grid-area: del; }
+    .task-priority-tag { grid-area: priority; justify-self: start; margin: 0; font-size: 8px; padding: 2px 5px; }
+    .task-deadline { grid-area: deadline; justify-self: end; font-size: 10px; }
+    .task-bell { grid-area: bell; justify-self: end; }
 
     /* Add task form */
     .add-task-form {
@@ -4120,6 +4206,8 @@
  
   function renderTask(t) {
     const dClass = deadlineClass(t.deadline);
+    const reminderActive = !!t.reminder_offset;
+    const reminderLabel = REMINDER_LABELS[t.reminder_offset || ''] || 'No reminder';
     return `
       <div class="task ${t.done ? 'done' : ''}" data-task-id="${t.id}" data-priority="${t.priority}">
         <div class="task-check" data-action="toggle"></div>
@@ -4131,6 +4219,12 @@
           </svg>
           ${deadlineLabel(t.deadline, t.deadline_time)}
         </div>
+        <button class="task-bell ${reminderActive ? 'active' : ''}" data-action="open-reminder" title="Reminder: ${reminderLabel}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="${reminderActive ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+        </button>
         <button class="task-del" data-action="delete-task" title="Delete task">×</button>
       </div>
     `;
@@ -4244,6 +4338,8 @@
       timeInput.addEventListener('blur', onBlur);
       dateInput.addEventListener('change', () => { /* wait for blur to commit */ });
       timeInput.addEventListener('change', () => { /* wait for blur to commit */ });
+    } else if (action === 'open-reminder') {
+      openReminderPicker(e.target.closest('.task-bell'), task);
     }
   });
  
@@ -4511,7 +4607,7 @@
     pop.querySelector('input[type="color"]').addEventListener('change', e => {
       job.color = e.target.value; save(); pop.remove(); render();
     });
- 
+
     const dismiss = (ev) => {
       if (!pop.contains(ev.target) && ev.target !== anchor) {
         pop.remove();
@@ -4520,8 +4616,70 @@
     };
     setTimeout(() => document.addEventListener('click', dismiss, true), 0);
   }
- 
- 
+
+
+  // ========= REMINDER PICKER =========
+  const REMINDER_LABELS = {
+    '':   'No reminder',
+    '1h': '1 hour before',
+    '1d': '1 day before',
+    '1w': '1 week before',
+  };
+  const REMINDER_OPTIONS = [
+    { value: '',   label: 'No reminder' },
+    { value: '1h', label: '1 hour before', requiresTime: true },
+    { value: '1d', label: '1 day before' },
+    { value: '1w', label: '1 week before' },
+  ];
+
+  function openReminderPicker(anchor, task) {
+    document.querySelectorAll('.reminder-picker-popover').forEach(p => p.remove());
+    const hasTime = !!task.deadline_time;
+
+    const pop = document.createElement('div');
+    pop.className = 'reminder-picker-popover';
+    pop.innerHTML = `
+      <div class="picker-label">// REMINDER</div>
+      ${REMINDER_OPTIONS.map(opt => {
+        const disabled = opt.requiresTime && !hasTime;
+        const isActive = (task.reminder_offset || '') === opt.value;
+        const hint = disabled ? '<span class="reminder-option-hint">Add a time to this task first</span>' : '';
+        return `<button class="reminder-option ${isActive ? 'active' : ''} ${disabled ? 'disabled' : ''}" data-value="${opt.value}"${disabled ? ' disabled' : ''}>${opt.label}${hint}</button>`;
+      }).join('')}
+    `;
+    document.body.appendChild(pop);
+
+    const rect = anchor.getBoundingClientRect();
+    const popRect = pop.getBoundingClientRect();
+    let left = rect.right - popRect.width;
+    if (left < 12) left = 12;
+    if (left + popRect.width > window.innerWidth - 12) left = window.innerWidth - popRect.width - 12;
+    pop.style.left = left + 'px';
+    pop.style.top = (rect.bottom + window.scrollY + 8) + 'px';
+
+    pop.addEventListener('click', e => {
+      const opt = e.target.closest('.reminder-option');
+      if (!opt || opt.classList.contains('disabled')) return;
+      const newVal = opt.dataset.value;
+      if ((task.reminder_offset || '') !== newVal) {
+        task.reminder_offset = newVal;
+        task.notified_at = null; // reset so a re-pick can fire again
+        save();
+      }
+      pop.remove();
+      render();
+    });
+
+    const dismiss = (ev) => {
+      if (!pop.contains(ev.target) && ev.target !== anchor) {
+        pop.remove();
+        document.removeEventListener('click', dismiss, true);
+      }
+    };
+    setTimeout(() => document.addEventListener('click', dismiss, true), 0);
+  }
+
+
   // ========= VIEW SWITCHING =========
   const viewTabs = document.getElementById('view-tabs');
   const viewPanels = document.querySelectorAll('[data-view-panel]');
