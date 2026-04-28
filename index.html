@@ -942,6 +942,42 @@
     letter-spacing: 0.1em;
   }
 
+  /* Date/time tile — wider so all three lines breathe */
+  .metric-clock {
+    grid-column: span 2;
+  }
+  .metric-clock .clock-grid {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: baseline;
+    gap: 16px;
+  }
+  .metric-clock .clock-weekday {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink-1);
+    letter-spacing: 0.02em;
+  }
+  .metric-clock .clock-time {
+    font-family: 'Inter', sans-serif;
+    font-size: 38px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--ink-0);
+    text-align: center;
+    letter-spacing: 0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+  .metric-clock .clock-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: right;
+  }
+
   /* ============ CONTROL PANEL ============ */
   .control-panel {
     background: var(--bg-1);
@@ -2331,8 +2367,8 @@
   .sync-badge.error { color: var(--red); border-color: var(--red); }
 
   @media (max-width: 1200px) {
-    .metrics { grid-template-columns: repeat(2, 1fr); }
-    .metric:nth-child(5) { grid-column: 1 / -1; }
+    .metrics { grid-template-columns: repeat(3, 1fr); }
+    .metric-clock { grid-column: 1 / -1; }
     .cal-control-panel { grid-template-columns: 1fr auto; }
     .cal-legend { grid-column: 1 / -1; }
     .cal-year-grid { grid-template-columns: repeat(3, 1fr); }
@@ -2405,8 +2441,11 @@
     .clock .label { font-size: 8px; }
 
     /* Metrics */
-    .metrics { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .metrics { grid-template-columns: 1fr; gap: 8px; margin-bottom: 16px; }
     .metric { padding: 12px; }
+    .metric-clock { grid-column: 1 / -1; }
+    .metric-clock .clock-time { font-size: 32px; }
+    .metric-clock .clock-weekday { font-size: 16px; }
     .metric .label { font-size: 9px; letter-spacing: 0.14em; }
     .metric .value { font-size: 26px; }
     .metric .sub { font-size: 9px; }
@@ -2672,7 +2711,7 @@
   /* Extra-small phones (iPhone SE, narrow) */
   @media (max-width: 380px) {
     .shell { padding: 10px; }
-    .metrics { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .metrics { grid-template-columns: 1fr; gap: 6px; }
     .metric { padding: 10px; }
     .metric .value { font-size: 22px; }
     .cal-day-cell { min-height: 54px; padding: 3px 2px; }
@@ -2991,10 +3030,6 @@
       <span class="sync-dot"></span>
       <span id="sync-text">Initializing...</span>
     </div>
-    <div class="clock">
-      <span><span class="label">DATE</span> <span id="date">----</span></span>
-      <span><span class="label">TIME</span> <span id="time">--:--:--</span></span>
-    </div>
   </div>
 </header>
 
@@ -3020,15 +3055,13 @@
       <div class="value" id="m-crit">0</div>
       <div class="sub">Requires attention</div>
     </div>
-    <div class="metric" data-accent="green">
-      <div class="label">Completed <span class="code mono">// 04</span></div>
-      <div class="value" id="m-done">0</div>
-      <div class="sub">Finished tasks</div>
-    </div>
-    <div class="metric" data-accent="blue">
-      <div class="label">Completion Rate <span class="code mono">// 05</span></div>
-      <div class="value" id="m-rate">0%</div>
-      <div class="sub">Overall progress</div>
+    <div class="metric metric-clock" data-accent="blue">
+      <div class="label">Pacific Time <span class="code mono">// 04</span></div>
+      <div class="clock-grid">
+        <div class="clock-weekday" id="m-weekday">&mdash;</div>
+        <div class="clock-time" id="m-time">&mdash;</div>
+        <div class="clock-date" id="m-date">&mdash;</div>
+      </div>
     </div>
   </section>
 
@@ -3967,18 +4000,14 @@
     const allTasks = state.jobs.flatMap(j => j.tasks);
     const open = allTasks.filter(t => !t.done);
     const crit = open.filter(t => t.priority === 'critical').length;
-    const done = allTasks.filter(t => t.done).length;
-    const rate = allTasks.length ? Math.round((done/allTasks.length)*100) : 0;
     const overdue = open.filter(t => {
       const d = daysFromNow(t.deadline);
       return d !== null && d < 0;
     }).length;
- 
+
     document.getElementById('m-jobs').textContent = state.jobs.length;
     document.getElementById('m-open').textContent = open.length;
     document.getElementById('m-crit').textContent = crit;
-    document.getElementById('m-done').textContent = done;
-    document.getElementById('m-rate').textContent = rate + '%';
     document.getElementById('overdue-flag').textContent = overdue;
   }
  
@@ -4232,16 +4261,25 @@
   });
  
  
-  // ========= CLOCK =========
+  // ========= CLOCK (Pacific time, 12-hour) =========
+  const CLOCK_FMT = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'America/Los_Angeles',
+  });
   function tick() {
-    const now = new Date();
-    const pad = n => String(n).padStart(2,'0');
-    const date = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())}`;
-    const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-    const dateEl = document.getElementById('date');
-    const timeEl = document.getElementById('time');
-    if (dateEl) dateEl.textContent = date;
-    if (timeEl) timeEl.textContent = time;
+    const parts = CLOCK_FMT.formatToParts(new Date());
+    const part = (type) => parts.find(p => p.type === type)?.value || '';
+    const weekdayEl = document.getElementById('m-weekday');
+    const timeEl = document.getElementById('m-time');
+    const dateEl = document.getElementById('m-date');
+    if (weekdayEl) weekdayEl.textContent = part('weekday');
+    if (timeEl) timeEl.textContent = `${part('hour')}:${part('minute')} ${part('dayPeriod')}`;
+    if (dateEl) dateEl.textContent = `${part('month')} ${part('day')}`;
   }
   tick(); setInterval(tick, 1000);
  
