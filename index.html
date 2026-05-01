@@ -1098,6 +1098,63 @@
     stroke-width: 2;
   }
 
+  /* ============ DASHBOARD QUICK-ADD PANEL ============ */
+  .dash-add-panel {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    padding: 14px 22px;
+    margin-bottom: 16px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 18px;
+  }
+  .dash-add-label::before { background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+  .dash-add-form {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto auto auto;
+    gap: 8px;
+    align-items: center;
+  }
+  .dash-add-form input[type="text"],
+  .dash-add-form input[type="date"],
+  .dash-add-form input[type="time"],
+  .dash-add-form select {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    color: var(--ink-0);
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .dash-add-form input:focus,
+  .dash-add-form select:focus { border-color: var(--red); }
+  .dash-add-form input[type="date"],
+  .dash-add-form input[type="time"] { color-scheme: dark; }
+  .dash-add-form input[type="date"] { width: 140px; }
+  .dash-add-form input[type="time"] { width: 110px; }
+  .dash-add-form .dash-add-job { min-width: 180px; max-width: 240px; cursor: pointer; }
+  .dash-add-form .dash-add-priority { width: 110px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; }
+  .dash-add-form .dash-add-text { font-size: 14px; }
+
+  .dash-add-empty {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 4px 0;
+  }
+  .dash-add-empty span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-2);
+    letter-spacing: 0.05em;
+  }
+
   /* ============ LAYOUT TOGGLE ============ */
   .control-actions {
     display: flex;
@@ -2652,6 +2709,19 @@
     .filter-btn { font-size: 10px; padding: 7px 10px; }
     .btn-primary, .btn-ghost { font-size: 10px; padding: 9px 12px; }
 
+    /* Quick-add panel on mobile: stack everything */
+    .dash-add-panel { grid-template-columns: 1fr; padding: 12px; gap: 10px; }
+    .dash-add-form {
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .dash-add-form .dash-add-text { grid-column: 1 / -1; font-size: 16px; padding: 10px; }
+    .dash-add-form .dash-add-job { grid-column: 1 / -1; min-width: 0; max-width: none; width: 100%; font-size: 14px; padding: 10px; }
+    .dash-add-form .dash-add-priority { width: 100%; font-size: 12px; }
+    .dash-add-form input[type="date"] { width: 100%; }
+    .dash-add-form input[type="time"] { width: 100%; }
+    .dash-add-form .add-btn { grid-column: 1 / -1; width: 100%; height: 40px; }
+
     /* Dashboard job cards */
     .jobs-grid { grid-template-columns: 1fr; gap: 14px; }
 
@@ -3394,6 +3464,31 @@
         Reset
       </button>
       <button class="btn-primary" id="btn-add-job">
+        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        New Job
+      </button>
+    </div>
+  </section>
+
+  <!-- Global quick-add panel: one place to create a task and route it to any job -->
+  <section class="dash-add-panel" id="dash-add-panel">
+    <div class="panel-label dash-add-label">// New Task</div>
+    <form class="dash-add-form" id="dash-add-form" data-action="dash-add-task">
+      <input class="dash-add-text" type="text" name="text" placeholder="What needs doing?" required maxlength="140" />
+      <select class="dash-add-job" name="job_id" required></select>
+      <select class="dash-add-priority" name="priority">
+        <option value="low">LOW</option>
+        <option value="medium" selected>MEDIUM</option>
+        <option value="high">HIGH</option>
+        <option value="critical">CRITICAL</option>
+      </select>
+      <input class="dash-add-date" type="date" name="deadline" title="Optional deadline" />
+      <input class="dash-add-time" type="time" name="deadline_time" lang="en-US" title="Optional time" />
+      <button type="submit" class="add-btn" title="Add task">+</button>
+    </form>
+    <div class="dash-add-empty" id="dash-add-empty" style="display:none;">
+      <span>No jobs yet — create one first to start adding tasks.</span>
+      <button type="button" class="btn-primary" id="dash-add-empty-btn">
         <svg class="btn-icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
         New Job
       </button>
@@ -4230,26 +4325,14 @@
  
       <div class="tasks-list">
         ${visibleTasks.length === 0
-          ? `<div class="task-empty">${total === 0 ? '// NO TASKS · ADD ONE BELOW' : '// NO TASKS MATCH FILTER'}</div>`
+          ? `<div class="task-empty">${total === 0 ? '// NO TASKS · USE THE QUICK-ADD ABOVE' : '// NO TASKS MATCH FILTER'}</div>`
           : visibleTasks.map(t => renderTask(t)).join('')}
       </div>
- 
-      <form class="add-task-form" data-action="add-task">
-        <input type="text" name="text" placeholder="New task..." required maxlength="140" />
-        <select name="priority">
-          <option value="low">LOW</option>
-          <option value="medium" selected>MEDIUM</option>
-          <option value="high">HIGH</option>
-          <option value="critical">CRITICAL</option>
-        </select>
-        <input type="date" name="deadline" />
-        <input type="time" name="deadline_time" lang="en-US" title="Optional time" />
-        <button type="submit" class="add-btn" title="Add task">+</button>
-      </form>
     `;
   }
  
   function render() {
+    refreshQuickAddPanel();
     if (currentLayout === 'grid') renderGrid();
     else renderFocus();
     updateMetrics();
@@ -4522,28 +4605,78 @@
     }
   });
  
-  jobAreaEl.addEventListener('submit', e => {
-    if (e.target.matches('[data-action="add-task"]')) {
-      e.preventDefault();
-      const card = e.target.closest('.job-card');
-      const job = state.jobs.find(j => j.id === card.dataset.jobId);
-      if (!job) return;
-      const fd = new FormData(e.target);
-      const text = (fd.get('text') || '').trim();
-      if (!text) return;
-      job.tasks.push({
-        id: 't_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
-        text,
-        priority: fd.get('priority') || 'medium',
-        deadline: fd.get('deadline') || '',
-        deadline_time: fd.get('deadline_time') || '',
-        reminder_offset: '',
-        notified_at: null,
-        done: false
-      });
-      save(); render();
+  // ========= GLOBAL QUICK-ADD PANEL =========
+  // Single point of task creation for the dashboard. The job dropdown is
+  // repopulated on every render() so it tracks the current job list.
+  const dashAddPanel = document.getElementById('dash-add-panel');
+  const dashAddForm = document.getElementById('dash-add-form');
+  const dashAddJobSelect = dashAddForm.querySelector('.dash-add-job');
+  const dashAddEmpty = document.getElementById('dash-add-empty');
+  const dashAddEmptyBtn = document.getElementById('dash-add-empty-btn');
+
+  function refreshQuickAddPanel() {
+    const jobs = state.jobs;
+    if (jobs.length === 0) {
+      // No jobs -> hide the form, show the empty state
+      dashAddForm.style.display = 'none';
+      dashAddEmpty.style.display = 'flex';
+      return;
     }
+    dashAddForm.style.display = 'grid';
+    dashAddEmpty.style.display = 'none';
+
+    // Repopulate options. Preserve current selection if it's still valid;
+    // otherwise default to the focused job (focus mode) or the first job.
+    const previousValue = dashAddJobSelect.value;
+    dashAddJobSelect.innerHTML = jobs.map(j => {
+      const label = (j.code ? j.code + ' · ' : '') + j.name;
+      return `<option value="${j.id}">${escapeHtml(label)}</option>`;
+    }).join('');
+
+    let target = '';
+    if (currentLayout === 'focus' && selectedJobId && jobs.find(j => j.id === selectedJobId)) {
+      target = selectedJobId;
+    } else if (previousValue && jobs.find(j => j.id === previousValue)) {
+      target = previousValue;
+    } else {
+      target = jobs[0].id;
+    }
+    dashAddJobSelect.value = target;
+  }
+
+  dashAddForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const fd = new FormData(dashAddForm);
+    const text = (fd.get('text') || '').trim();
+    const jobId = fd.get('job_id');
+    if (!text || !jobId) return;
+    const job = state.jobs.find(j => j.id === jobId);
+    if (!job) {
+      showError('Job not found', 'The selected job no longer exists. Pick another from the dropdown.');
+      return;
+    }
+    job.tasks.push({
+      id: 't_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      text,
+      priority: fd.get('priority') || 'medium',
+      deadline: fd.get('deadline') || '',
+      deadline_time: fd.get('deadline_time') || '',
+      reminder_offset: '',
+      notified_at: null,
+      done: false,
+    });
+
+    // Reset only the text and time fields; keep the job/priority/date so a
+    // run of similar tasks can be added quickly.
+    dashAddForm.querySelector('.dash-add-text').value = '';
+    dashAddForm.querySelector('.dash-add-time').value = '';
+
+    save();
+    render();
+    dashAddForm.querySelector('.dash-add-text').focus();
   });
+
+  dashAddEmptyBtn.addEventListener('click', () => openJobModal());
  
  
   // ========= FILTERS =========
