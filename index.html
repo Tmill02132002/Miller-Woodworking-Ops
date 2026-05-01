@@ -3054,6 +3054,109 @@
   background: var(--bg-2);
 }
 
+/* Notification settings gear */
+.settings-btn {
+  position: relative;
+  background: var(--bg-1);
+  border: 1px solid var(--line-bright);
+  color: var(--ink-1);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  flex-shrink: 0;
+  padding: 0;
+}
+.settings-btn:hover {
+  color: var(--ink-0);
+  border-color: var(--red);
+  background: var(--bg-2);
+}
+.settings-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  background: var(--red);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--red);
+}
+
+/* Settings modal extras */
+.settings-help {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  margin-top: -4px;
+}
+.settings-help a { color: var(--red); text-decoration: none; }
+.settings-help a:hover { text-decoration: underline; }
+
+.settings-toggle-field { margin-top: 4px; }
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--ink-0);
+  font-weight: 500;
+}
+.settings-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--red);
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+}
+.settings-toggle-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-2);
+  margin-top: 6px;
+  margin-left: 26px;
+  line-height: 1.4;
+}
+
+.settings-test-result {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  line-height: 1.4;
+}
+.settings-test-result.ok {
+  color: var(--green);
+  border-color: color-mix(in srgb, var(--green) 50%, var(--line));
+  background: color-mix(in srgb, var(--green) 10%, transparent);
+}
+.settings-test-result.err {
+  color: var(--red);
+  border-color: color-mix(in srgb, var(--red) 50%, var(--line));
+  background: color-mix(in srgb, var(--red) 10%, transparent);
+}
+.settings-test-result.pending {
+  color: var(--ink-1);
+}
+
+.modal-actions-split {
+  justify-content: space-between;
+}
+.modal-actions-right {
+  display: flex;
+  gap: 10px;
+}
+
 /* ============ SYNC BADGE (REDESIGNED, always visible) ============ */
 .sync-badge {
   position: static;
@@ -3217,6 +3320,13 @@
         </svg>
       </button>
     </div>
+    <button class="settings-btn" id="settings-btn" title="Notification settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <span class="settings-dot" id="settings-dot" style="display:none;"></span>
+    </button>
     <div id="sync-badge" class="sync-badge">
       <span class="sync-dot"></span>
       <span id="sync-text">Initializing...</span>
@@ -3393,6 +3503,40 @@
     <div class="modal-actions">
       <button class="btn-ghost" id="quick-task-cancel">Cancel</button>
       <button class="btn-primary" id="quick-task-save">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notification settings modal (Pushover keys + summary toggle) -->
+<div class="modal-backdrop" id="modal-settings">
+  <div class="modal">
+    <h3>Notifications</h3>
+    <div class="modal-sub">// Pushover credentials</div>
+    <div class="field">
+      <label>Pushover User Key</label>
+      <input type="text" id="settings-user-key" placeholder="u...30 chars" autocomplete="off" spellcheck="false" />
+    </div>
+    <div class="field">
+      <label>Pushover App Token</label>
+      <input type="text" id="settings-app-token" placeholder="a...30 chars" autocomplete="off" spellcheck="false" />
+    </div>
+    <div class="field settings-help">
+      Get these from <a href="https://pushover.net" target="_blank" rel="noopener">pushover.net</a> &mdash; the User Key is on your dashboard, the App Token comes from creating an "Application" (one-time setup).
+    </div>
+    <div class="field settings-toggle-field">
+      <label class="settings-toggle">
+        <input type="checkbox" id="settings-weekday-summary" />
+        <span>Weekday summary at 7 AM Pacific</span>
+      </label>
+      <div class="settings-toggle-sub">A morning roundup Mon&ndash;Fri counting overdue and due-today tasks.</div>
+    </div>
+    <div class="settings-test-result" id="settings-test-result" style="display:none;"></div>
+    <div class="modal-actions modal-actions-split">
+      <button class="btn-ghost" id="settings-test">Test push</button>
+      <div class="modal-actions-right">
+        <button class="btn-ghost" id="settings-cancel">Cancel</button>
+        <button class="btn-primary" id="settings-save">Save</button>
+      </div>
     </div>
   </div>
 </div>
@@ -3901,6 +4045,7 @@
     authOverlay.classList.add('hidden');
     updateSessionIndicator();
     await load();
+    await loadSettings();
     setupRealtime();
     applyLayout(currentLayout);
   }
@@ -4525,8 +4670,150 @@
     renderCalendar();
     render();
   });
- 
- 
+
+
+  // ========= NOTIFICATION SETTINGS (Phase 4) =========
+  // Stores Pushover credentials in user_settings (RLS-protected, single user).
+  // Phase 5's Edge Function will read the same row from the DB to send pushes.
+  let userSettings = null;
+  const settingsModal = document.getElementById('modal-settings');
+  const settingsBtn = document.getElementById('settings-btn');
+  const settingsDot = document.getElementById('settings-dot');
+
+  async function loadSettings() {
+    if (!currentUser) return;
+    try {
+      const { data, error } = await sb
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .maybeSingle();
+      if (error) throw error;
+      if (data) {
+        userSettings = data;
+      } else {
+        // First time -> insert a blank row so subsequent updates always update
+        const insert = await sb
+          .from('user_settings')
+          .insert({ user_id: currentUser.id })
+          .select()
+          .single();
+        if (insert.error) throw insert.error;
+        userSettings = insert.data;
+      }
+      updateGearStatus();
+    } catch (e) {
+      console.error('[loadSettings] failed:', e);
+      showError('Could not load notification settings', e.message || String(e));
+    }
+  }
+
+  function updateGearStatus() {
+    const hasKeys = !!(userSettings && userSettings.pushover_user_key && userSettings.pushover_app_token);
+    settingsDot.style.display = hasKeys ? 'none' : 'block';
+    settingsBtn.title = hasKeys ? 'Notification settings' : 'Set up notifications';
+  }
+
+  async function saveSettings(patch) {
+    if (!currentUser) throw new Error('Not signed in');
+    const row = {
+      user_id: currentUser.id,
+      ...patch,
+      updated_at: new Date().toISOString(),
+    };
+    const { data, error } = await sb
+      .from('user_settings')
+      .upsert(row, { onConflict: 'user_id' })
+      .select()
+      .single();
+    if (error) throw error;
+    userSettings = data;
+    updateGearStatus();
+    return data;
+  }
+
+  // Pushover supports CORS for the messages endpoint, so we can call directly from the browser.
+  async function testPushover(userKey, appToken) {
+    const body = new URLSearchParams({
+      token: appToken,
+      user: userKey,
+      title: 'Miller Ops',
+      message: 'Test notification — your keys work.',
+    });
+    const resp = await fetch('https://api.pushover.net/1/messages.json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    });
+    const json = await resp.json().catch(() => ({}));
+    if (resp.ok && json.status === 1) return { ok: true };
+    const errs = (json.errors || []).join('; ');
+    return { ok: false, message: errs || `HTTP ${resp.status}` };
+  }
+
+  function openSettingsModal() {
+    if (!currentUser) return;
+    document.getElementById('settings-user-key').value = userSettings?.pushover_user_key || '';
+    document.getElementById('settings-app-token').value = userSettings?.pushover_app_token || '';
+    document.getElementById('settings-weekday-summary').checked = userSettings?.daily_summary_enabled !== false;
+    document.getElementById('settings-test-result').style.display = 'none';
+    settingsModal.classList.add('open');
+    setTimeout(() => document.getElementById('settings-user-key').focus(), 50);
+  }
+  function closeSettingsModal() { settingsModal.classList.remove('open'); }
+
+  settingsBtn.addEventListener('click', openSettingsModal);
+  document.getElementById('settings-cancel').addEventListener('click', closeSettingsModal);
+  settingsModal.addEventListener('click', e => { if (e.target === settingsModal) closeSettingsModal(); });
+
+  document.getElementById('settings-test').addEventListener('click', async () => {
+    const userKey = document.getElementById('settings-user-key').value.trim();
+    const appToken = document.getElementById('settings-app-token').value.trim();
+    const result = document.getElementById('settings-test-result');
+    if (!userKey || !appToken) {
+      result.style.display = 'block';
+      result.className = 'settings-test-result err';
+      result.textContent = 'Enter both User Key and App Token before testing.';
+      return;
+    }
+    result.style.display = 'block';
+    result.className = 'settings-test-result pending';
+    result.textContent = 'Sending test push…';
+    try {
+      const r = await testPushover(userKey, appToken);
+      if (r.ok) {
+        result.className = 'settings-test-result ok';
+        result.textContent = '✓ Test sent. Check your phone.';
+      } else {
+        result.className = 'settings-test-result err';
+        result.textContent = '✗ Pushover rejected the keys: ' + r.message;
+      }
+    } catch (e) {
+      result.className = 'settings-test-result err';
+      result.textContent = '✗ Network error: ' + (e.message || String(e));
+    }
+  });
+
+  document.getElementById('settings-save').addEventListener('click', async () => {
+    const userKey = document.getElementById('settings-user-key').value.trim();
+    const appToken = document.getElementById('settings-app-token').value.trim();
+    const summaryOn = document.getElementById('settings-weekday-summary').checked;
+    try {
+      await saveSettings({
+        pushover_user_key: userKey || null,
+        pushover_app_token: appToken || null,
+        daily_summary_enabled: summaryOn,
+      });
+      closeSettingsModal();
+    } catch (e) {
+      const result = document.getElementById('settings-test-result');
+      result.style.display = 'block';
+      result.className = 'settings-test-result err';
+      result.textContent = 'Save failed: ' + (e.message || String(e));
+    }
+  });
+
+
   // ========= RESET =========
   document.getElementById('btn-reset').addEventListener('click', async () => {
     if (!confirm('Delete all jobs and tasks? This cannot be undone.')) return;
