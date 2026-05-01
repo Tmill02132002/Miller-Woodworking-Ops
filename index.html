@@ -1901,22 +1901,64 @@
     font-weight: 500;
     color: var(--ink-0);
     line-height: 1.3;
-    cursor: text;
     outline: none;
     min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    cursor: pointer;
   }
-  .task-text:focus {
+
+  /* Edit button on the task pill */
+  .task-edit {
+    background: transparent;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--ink-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, transform 0.15s;
+    flex-shrink: 0;
+    line-height: 0;
+  }
+  .task-edit:hover { color: var(--ink-0); transform: scale(1.1); }
+
+  /* Subtask styling: smaller pill, indented under the parent */
+  .subtasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-left: 22px;
+    padding-left: 12px;
+    border-left: 2px solid var(--line);
+    margin-top: 4px;
+    margin-bottom: 4px;
+  }
+  .task.task-subtask {
+    min-height: 28px;
+    padding: 4px 12px 4px 8px;
     background: var(--bg-1);
-    padding: 2px 6px;
-    margin: -2px -6px;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-    border-radius: 6px;
   }
+  .task.task-subtask .task-text { font-size: 13px; }
+  .task.task-subtask .task-check { width: 16px; height: 16px; }
+  .task.task-subtask .task-priority-tag { font-size: 8px; padding: 2px 5px; }
+  .task.task-subtask .task-deadline { font-size: 10px; }
+
+  /* Reminder hint dot on the check ring (since the bell is gone) */
+  .task-check[data-reminder-active="1"]::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 6px;
+    height: 6px;
+    background: var(--priority-color, var(--amber));
+    border-radius: 50%;
+    box-shadow: 0 0 4px var(--priority-color, var(--amber));
+  }
+  .task-check { position: relative; }
 
   .task-priority-tag {
     font-family: 'JetBrains Mono', monospace;
@@ -2745,18 +2787,22 @@
       grid-template-columns: auto 1fr auto auto;
       grid-template-rows: auto auto;
       grid-template-areas:
-        "check text     text    del"
-        "check priority deadline bell";
+        "check text     edit     del"
+        "check priority deadline deadline";
       gap: 4px 8px;
       padding: 6px 12px 6px 8px;
       border-radius: 22px;
     }
     .task-check { grid-area: check; align-self: center; margin-top: 0; }
     .task-text { grid-area: text; font-size: 14px; }
+    .task-edit { grid-area: edit; }
     .task-del { grid-area: del; }
     .task-priority-tag { grid-area: priority; justify-self: start; margin: 0; font-size: 8px; padding: 2px 5px; }
     .task-deadline { grid-area: deadline; justify-self: end; font-size: 10px; }
-    .task-bell { grid-area: bell; justify-self: end; }
+
+    /* Subtask indent collapses on mobile to save horizontal room */
+    .subtasks-list { margin-left: 14px; padding-left: 8px; }
+    .task.task-subtask { padding: 4px 10px 4px 6px; }
 
     /* Add task form */
     .add-task-form {
@@ -3205,6 +3251,111 @@
   gap: 10px;
 }
 
+/* Danger button variant for "Delete" inside the edit modal */
+.btn-danger {
+  border-color: color-mix(in srgb, var(--red) 60%, var(--line)) !important;
+  color: var(--red) !important;
+}
+.btn-danger:hover {
+  background: color-mix(in srgb, var(--red) 18%, transparent) !important;
+  border-color: var(--red) !important;
+  color: var(--red) !important;
+}
+
+/* Task edit modal — subtask list + add button */
+.modal-task-edit { max-width: 540px; width: 100%; }
+.subtask-edit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.subtask-edit-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px 8px 8px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  border-left: 3px solid var(--priority-color, var(--ink-3));
+}
+.subtask-edit-row[data-priority="critical"] { --priority-color: var(--red); }
+.subtask-edit-row[data-priority="high"]     { --priority-color: var(--amber); }
+.subtask-edit-row[data-priority="medium"]   { --priority-color: var(--blue); }
+.subtask-edit-row[data-priority="low"]      { --priority-color: var(--ink-3); }
+.subtask-edit-row.done { opacity: 0.5; }
+.subtask-edit-row.done .subtask-edit-text { text-decoration: line-through; }
+
+.subtask-edit-row .subtask-edit-check {
+  width: 16px; height: 16px;
+  border: 1.5px solid var(--priority-color, var(--ink-2));
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent;
+  padding: 0;
+}
+.subtask-edit-row.done .subtask-edit-check { background: var(--priority-color); border-color: var(--priority-color); }
+.subtask-edit-row.done .subtask-edit-check::after {
+  content: '';
+  width: 7px; height: 3px;
+  border: 2px solid white;
+  border-top: 0;
+  border-right: 0;
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+
+.subtask-edit-row .subtask-edit-text {
+  background: transparent;
+  border: none;
+  color: var(--ink-0);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  outline: none;
+  min-width: 0;
+  width: 100%;
+  padding: 0;
+}
+.subtask-edit-row .subtask-edit-text:focus { background: var(--bg-1); padding: 2px 6px; margin: -2px -6px; border-radius: 6px; }
+
+.subtask-edit-row .subtask-edit-open,
+.subtask-edit-row .subtask-edit-del {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--ink-3);
+  display: flex; align-items: center; justify-content: center;
+  transition: color 0.15s, transform 0.15s;
+  flex-shrink: 0;
+  line-height: 0;
+}
+.subtask-edit-row .subtask-edit-open:hover { color: var(--ink-0); transform: scale(1.1); }
+.subtask-edit-row .subtask-edit-del { font-size: 16px; line-height: 1; }
+.subtask-edit-row .subtask-edit-del:hover { color: var(--red); }
+
+.subtask-add-btn {
+  width: 100%;
+  justify-content: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.subtask-edit-empty {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-3);
+  text-align: center;
+  padding: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 /* ============ SYNC BADGE (REDESIGNED, always visible) ============ */
 .sync-badge {
   position: static;
@@ -3580,6 +3731,66 @@
   </div>
 </div>
 
+<!-- Task edit modal (used for both top-level tasks and subtasks) -->
+<div class="modal-backdrop" id="modal-task-edit">
+  <div class="modal modal-task-edit">
+    <h3 id="task-edit-title">Edit Task</h3>
+    <div class="modal-sub" id="task-edit-sub">// Edit a task's details</div>
+    <div class="field">
+      <label>Task</label>
+      <input type="text" id="task-edit-text" placeholder="What needs doing?" maxlength="140" />
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Priority</label>
+        <select id="task-edit-priority">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="critical">Critical</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Reminder</label>
+        <select id="task-edit-reminder">
+          <option value="">No reminder</option>
+          <option value="1h">1 hour before</option>
+          <option value="1d">1 day before</option>
+          <option value="1w">1 week before</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Date (optional)</label>
+        <input type="date" id="task-edit-date" />
+      </div>
+      <div class="field">
+        <label>Time (optional)</label>
+        <input type="time" id="task-edit-time" lang="en-US" />
+      </div>
+    </div>
+
+    <!-- Subtasks section: only visible for top-level tasks -->
+    <div class="field" id="task-edit-subtasks-section">
+      <label>Subtasks</label>
+      <div class="subtask-edit-list" id="task-edit-subtask-list"></div>
+      <button type="button" class="btn-ghost subtask-add-btn" id="task-edit-add-subtask">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Add subtask
+      </button>
+    </div>
+
+    <div class="modal-actions modal-actions-split">
+      <button class="btn-ghost btn-danger" id="task-edit-delete">Delete</button>
+      <div class="modal-actions-right">
+        <button class="btn-ghost" id="task-edit-cancel">Cancel</button>
+        <button class="btn-primary" id="task-edit-save">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Notification settings modal (Pushover keys + summary toggle) -->
 <div class="modal-backdrop" id="modal-settings">
   <div class="modal">
@@ -3818,6 +4029,7 @@
           deadline_time: t.deadline_time || '',
           reminder_offset: t.reminder_offset || '',
           notified_at: t.notified_at || null,
+          parent_id: t.parent_id || null,
           done: !!t.done,
         })),
       }));
@@ -3911,6 +4123,7 @@
             deadline_time: t.deadline_time || null,
             reminder_offset: t.reminder_offset || null,
             notified_at: t.notified_at || null,
+            parent_id: t.parent_id || null,
             done: !!t.done,
             sort_order: i,
             updated_at: now,
@@ -4274,7 +4487,22 @@
   let selectedJobId = null;
  
   function jobCardHtml(job) {
-    const visibleTasks = sortTasks(job.tasks).filter(t => matchesFilter(t, currentFilter));
+    // Group tasks: parents at top, subtasks indented under their parent.
+    // A parent is shown if it (or any of its subtasks) matches the active filter.
+    const sorted = sortTasks(job.tasks);
+    const parents = sorted.filter(t => !t.parent_id);
+    const childMap = new Map();
+    for (const t of sorted) {
+      if (t.parent_id) {
+        if (!childMap.has(t.parent_id)) childMap.set(t.parent_id, []);
+        childMap.get(t.parent_id).push(t);
+      }
+    }
+    const visibleParents = parents.filter(p => {
+      if (matchesFilter(p, currentFilter)) return true;
+      const subs = childMap.get(p.id) || [];
+      return subs.some(s => matchesFilter(s, currentFilter));
+    });
     const total = job.tasks.length;
     const done = job.tasks.filter(t => t.done).length;
     const pct = total ? Math.round((done/total) * 100) : 0;
@@ -4302,9 +4530,15 @@
       </div>
  
       <div class="tasks-list">
-        ${visibleTasks.length === 0
+        ${visibleParents.length === 0
           ? `<div class="task-empty">${total === 0 ? '// NO TASKS · USE THE QUICK-ADD ABOVE' : '// NO TASKS MATCH FILTER'}</div>`
-          : visibleTasks.map(t => renderTask(t)).join('')}
+          : visibleParents.map(parent => {
+              const subs = (childMap.get(parent.id) || []).filter(s => matchesFilter(s, currentFilter));
+              const subHtml = subs.length
+                ? `<div class="subtasks-list">${subs.map(s => renderTask(s)).join('')}</div>`
+                : '';
+              return renderTask(parent) + subHtml;
+            }).join('')}
       </div>
     `;
   }
@@ -4414,21 +4648,23 @@
     const dClass = deadlineClass(t.deadline);
     const reminderActive = !!t.reminder_offset;
     const reminderLabel = REMINDER_LABELS[t.reminder_offset || ''] || 'No reminder';
+    const subtaskClass = t.parent_id ? ' task-subtask' : '';
+    const reminderHint = reminderActive ? ` · ${reminderLabel}` : '';
     return `
-      <div class="task ${t.done ? 'done' : ''}" data-task-id="${t.id}" data-priority="${t.priority}">
-        <div class="task-check" data-action="toggle"></div>
-        <div class="task-text" contenteditable="true" data-action="edit-text">${escapeHtml(t.text)}</div>
+      <div class="task${subtaskClass} ${t.done ? 'done' : ''}" data-task-id="${t.id}" data-priority="${t.priority}" data-action="open-edit">
+        <div class="task-check" data-action="toggle"${reminderActive ? ' data-reminder-active="1"' : ''}></div>
+        <div class="task-text" title="${escapeHtml(t.text)}">${escapeHtml(t.text)}</div>
         <div class="task-priority-tag" data-action="cycle-priority" title="Click to cycle priority">${t.priority.toUpperCase()}</div>
-        <div class="task-deadline ${dClass}" data-action="edit-deadline" title="${fmtDate(t.deadline, t.deadline_time)}">
+        <div class="task-deadline ${dClass}" title="${fmtDate(t.deadline, t.deadline_time)}${reminderHint}">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
           </svg>
           ${deadlineLabel(t.deadline, t.deadline_time)}
         </div>
-        <button class="task-bell ${reminderActive ? 'active' : ''}" data-action="open-reminder" title="Reminder: ${reminderLabel}">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="${reminderActive ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        <button class="task-edit" data-action="open-edit" title="Edit task">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
         </button>
         <button class="task-del" data-action="delete-task" title="Delete task">×</button>
@@ -4502,54 +4738,17 @@
       task.done = !task.done;
       save(); render();
     } else if (action === 'delete-task') {
-      job.tasks = job.tasks.filter(t => t.id !== taskId);
+      // If deleting a parent, also confirm cascade
+      const subs = job.tasks.filter(t => t.parent_id === task.id);
+      if (subs.length > 0 && !confirm(`This task has ${subs.length} subtask${subs.length === 1 ? '' : 's'}. Delete them too?`)) return;
+      job.tasks = job.tasks.filter(t => t.id !== taskId && t.parent_id !== taskId);
       save(); render();
     } else if (action === 'cycle-priority') {
       const order = ['low','medium','high','critical'];
       task.priority = order[(order.indexOf(task.priority) + 1) % order.length];
       save(); render();
-    } else if (action === 'edit-deadline') {
-      const parent = e.target.closest('.task-deadline');
-      parent.innerHTML = '';
-      const inputStyle = 'font-family:JetBrains Mono,monospace;background:var(--bg-1);color:var(--ink-0);border:1px solid var(--red);padding:2px 4px;color-scheme:dark;font-size:11px;';
-      const dateInput = document.createElement('input');
-      dateInput.type = 'date';
-      dateInput.value = task.deadline || '';
-      dateInput.style.cssText = inputStyle;
-      const timeInput = document.createElement('input');
-      timeInput.type = 'time';
-      timeInput.lang = 'en-US';
-      timeInput.value = task.deadline_time || '';
-      timeInput.title = 'Optional time';
-      timeInput.style.cssText = inputStyle + 'margin-left:4px;';
-      parent.appendChild(dateInput);
-      parent.appendChild(timeInput);
-      dateInput.focus();
-      dateInput.showPicker && dateInput.showPicker();
-      let editing = true;
-      const commit = () => {
-        if (!editing) return;
-        editing = false;
-        const newDate = dateInput.value;
-        const newTime = timeInput.value;
-        const changed = (task.deadline || '') !== newDate || (task.deadline_time || '') !== newTime;
-        task.deadline = newDate;
-        task.deadline_time = newTime;
-        if (changed) task.notified_at = null;
-        save();
-        render();
-      };
-      const onBlur = (ev) => {
-        // Don't commit if focus moved between the two inputs
-        if (ev.relatedTarget === dateInput || ev.relatedTarget === timeInput) return;
-        commit();
-      };
-      dateInput.addEventListener('blur', onBlur);
-      timeInput.addEventListener('blur', onBlur);
-      dateInput.addEventListener('change', () => { /* wait for blur to commit */ });
-      timeInput.addEventListener('change', () => { /* wait for blur to commit */ });
-    } else if (action === 'open-reminder') {
-      openReminderPicker(e.target.closest('.task-bell'), task);
+    } else if (action === 'open-edit') {
+      openTaskEditModal(task, job);
     }
   });
  
@@ -4570,13 +4769,6 @@
       job.code = e.target.textContent.trim() || 'NO-CODE';
       save();
       render();
-    } else if (e.target.classList.contains('task-text')) {
-      const taskId = e.target.closest('.task').dataset.taskId;
-      const task = job.tasks.find(t => t.id === taskId);
-      if (task) {
-        task.text = e.target.textContent.trim() || 'Untitled task';
-        save();
-      }
     }
   }, true);
  
@@ -4645,6 +4837,7 @@
       deadline_time: fd.get('deadline_time') || '',
       reminder_offset: '',
       notified_at: null,
+      parent_id: null,
       done: false,
     });
 
@@ -4774,6 +4967,7 @@
       deadline_time,
       reminder_offset: '',
       notified_at: null,
+      parent_id: null,
       done: false,
     });
     save();
@@ -5516,8 +5710,195 @@
 
   window.addEventListener('pointerup', e => endDrag(e, false));
   window.addEventListener('pointercancel', e => endDrag(e, true));
- 
- 
+
+
+  // ========= TASK EDIT MODAL (Phase 6: subtasks + consolidated edit) =========
+  // The same modal handles both top-level tasks and subtasks. The Subtasks
+  // section is hidden when editing a subtask (one nesting level only).
+  const taskEditModal = document.getElementById('modal-task-edit');
+  let editingTask = null;     // reference to the currently-open task object
+  let editingJob = null;      // its job container, for save/delete operations
+
+  function openTaskEditModal(task, job) {
+    if (!task || !job) return;
+    editingTask = task;
+    editingJob = job;
+
+    const isSubtask = !!task.parent_id;
+    document.getElementById('task-edit-title').textContent = isSubtask ? 'Edit Subtask' : 'Edit Task';
+    if (isSubtask) {
+      const parent = job.tasks.find(t => t.id === task.parent_id);
+      const parentLabel = parent ? parent.text : 'Unknown';
+      document.getElementById('task-edit-sub').textContent = `// Subtask of "${parentLabel}"`;
+    } else {
+      document.getElementById('task-edit-sub').textContent = `// In job "${job.name}"`;
+    }
+
+    document.getElementById('task-edit-text').value = task.text || '';
+    document.getElementById('task-edit-priority').value = task.priority || 'medium';
+    document.getElementById('task-edit-reminder').value = task.reminder_offset || '';
+    document.getElementById('task-edit-date').value = task.deadline || '';
+    document.getElementById('task-edit-time').value = task.deadline_time || '';
+
+    // Show or hide the subtasks section
+    const subSection = document.getElementById('task-edit-subtasks-section');
+    subSection.style.display = isSubtask ? 'none' : '';
+    if (!isSubtask) renderSubtaskEditList();
+
+    taskEditModal.classList.add('open');
+    setTimeout(() => document.getElementById('task-edit-text').focus(), 50);
+  }
+
+  function closeTaskEditModal() {
+    taskEditModal.classList.remove('open');
+    editingTask = null;
+    editingJob = null;
+  }
+
+  function renderSubtaskEditList() {
+    if (!editingTask || !editingJob) return;
+    const list = document.getElementById('task-edit-subtask-list');
+    const subs = sortTasks(editingJob.tasks.filter(t => t.parent_id === editingTask.id));
+    if (subs.length === 0) {
+      list.innerHTML = `<div class="subtask-edit-empty">// No subtasks yet</div>`;
+      return;
+    }
+    list.innerHTML = subs.map(s => `
+      <div class="subtask-edit-row ${s.done ? 'done' : ''}" data-priority="${s.priority}" data-task-id="${s.id}">
+        <button class="subtask-edit-check" data-action="sub-toggle" title="Mark done"></button>
+        <input class="subtask-edit-text" data-action="sub-rename" value="${escapeHtml(s.text)}" maxlength="140" />
+        <button class="subtask-edit-open" data-action="sub-open" title="Edit subtask">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
+        <button class="subtask-edit-del" data-action="sub-delete" title="Delete subtask">×</button>
+      </div>
+    `).join('');
+  }
+
+  // Save the edits in the modal back to the in-memory task, then save() and render().
+  function commitTaskEditModal() {
+    if (!editingTask || !editingJob) return;
+    const text = document.getElementById('task-edit-text').value.trim() || 'Untitled task';
+    const priority = document.getElementById('task-edit-priority').value || 'medium';
+    const reminder = document.getElementById('task-edit-reminder').value || '';
+    const date = document.getElementById('task-edit-date').value || '';
+    const time = document.getElementById('task-edit-time').value || '';
+
+    // If the deadline-related fields changed, clear notified_at so any reminder re-fires.
+    const deadlineChanged =
+      (editingTask.deadline || '') !== date ||
+      (editingTask.deadline_time || '') !== time ||
+      (editingTask.reminder_offset || '') !== reminder;
+
+    editingTask.text = text;
+    editingTask.priority = priority;
+    editingTask.reminder_offset = reminder;
+    editingTask.deadline = date;
+    editingTask.deadline_time = time;
+    if (deadlineChanged) editingTask.notified_at = null;
+
+    save();
+    closeTaskEditModal();
+    render();
+  }
+
+  document.getElementById('task-edit-cancel').addEventListener('click', closeTaskEditModal);
+  document.getElementById('task-edit-save').addEventListener('click', commitTaskEditModal);
+  taskEditModal.addEventListener('click', e => { if (e.target === taskEditModal) closeTaskEditModal(); });
+
+  document.getElementById('task-edit-delete').addEventListener('click', () => {
+    if (!editingTask || !editingJob) return;
+    const taskId = editingTask.id;
+    const subs = editingJob.tasks.filter(t => t.parent_id === taskId);
+    const msg = subs.length > 0
+      ? `Delete this task and its ${subs.length} subtask${subs.length === 1 ? '' : 's'}?`
+      : 'Delete this task?';
+    if (!confirm(msg)) return;
+    editingJob.tasks = editingJob.tasks.filter(t => t.id !== taskId && t.parent_id !== taskId);
+    save();
+    closeTaskEditModal();
+    render();
+  });
+
+  document.getElementById('task-edit-add-subtask').addEventListener('click', () => {
+    if (!editingTask || !editingJob) return;
+    const newSub = {
+      id: 't_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      text: 'New subtask',
+      priority: 'medium',
+      deadline: '',
+      deadline_time: '',
+      reminder_offset: '',
+      notified_at: null,
+      parent_id: editingTask.id,
+      done: false,
+    };
+    editingJob.tasks.push(newSub);
+    save();
+    renderSubtaskEditList();
+    // Focus the new row's text input so the user can rename immediately
+    const rows = document.querySelectorAll('#task-edit-subtask-list .subtask-edit-row');
+    const newRow = rows[rows.length - 1];
+    if (newRow) {
+      const input = newRow.querySelector('.subtask-edit-text');
+      if (input) { input.focus(); input.select(); }
+    }
+  });
+
+  // Subtask row interactions inside the modal
+  document.getElementById('task-edit-subtask-list').addEventListener('click', e => {
+    const row = e.target.closest('.subtask-edit-row');
+    if (!row) return;
+    const taskId = row.dataset.taskId;
+    const sub = editingJob && editingJob.tasks.find(t => t.id === taskId);
+    if (!sub) return;
+    const action = e.target.closest('[data-action]')?.dataset.action;
+
+    if (action === 'sub-toggle') {
+      sub.done = !sub.done;
+      save();
+      renderSubtaskEditList();
+      // Don't close the parent modal; user is still editing the parent.
+    } else if (action === 'sub-delete') {
+      if (!confirm('Delete this subtask?')) return;
+      editingJob.tasks = editingJob.tasks.filter(t => t.id !== taskId);
+      save();
+      renderSubtaskEditList();
+    } else if (action === 'sub-open') {
+      // Open the subtask's edit modal in place of the parent's modal.
+      // commitTaskEditModal would save the parent; we do that first so any
+      // half-edited parent fields aren't lost.
+      const targetSub = sub;
+      const targetJob = editingJob;
+      commitTaskEditModal();
+      openTaskEditModal(targetSub, targetJob);
+    }
+  });
+
+  // Inline rename of a subtask via its text input — commit on blur or Enter.
+  document.getElementById('task-edit-subtask-list').addEventListener('blur', e => {
+    if (!e.target.matches('.subtask-edit-text')) return;
+    const row = e.target.closest('.subtask-edit-row');
+    const taskId = row?.dataset.taskId;
+    const sub = editingJob && editingJob.tasks.find(t => t.id === taskId);
+    if (!sub) return;
+    const newText = e.target.value.trim() || 'Untitled subtask';
+    if (newText !== sub.text) {
+      sub.text = newText;
+      save();
+    }
+  }, true);
+  document.getElementById('task-edit-subtask-list').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.target.matches('.subtask-edit-text')) {
+      e.preventDefault();
+      e.target.blur();
+    }
+  });
+
+
   // ========= INIT =========
   // No eager auth check — onAuthStateChange fires INITIAL_SESSION on page load,
   // which drives all init. Calling getSession() ourselves here would race
