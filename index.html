@@ -1010,50 +1010,29 @@
     box-shadow: 0 0 8px var(--red);
   }
 
-  .filter-group {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .filter-btn {
+  /* Filter dropdown — replaces the wide row of filter buttons */
+  .filter-select {
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    padding: 8px 14px;
+    padding: 9px 14px;
     background: var(--bg-2);
-    color: var(--ink-1);
+    color: var(--ink-0);
     border: 1px solid var(--line);
     cursor: pointer;
-    transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    transition: border-color 0.15s, background 0.15s;
+    min-width: 180px;
+    outline: none;
+    color-scheme: dark;
   }
-
-  .filter-btn:hover {
+  .filter-select:hover {
     border-color: var(--line-bright);
-    color: var(--ink-0);
     background: var(--bg-3);
   }
-
-  .filter-btn.active {
-    background: var(--red);
+  .filter-select:focus {
     border-color: var(--red);
-    color: white;
-    box-shadow: 0 0 12px var(--red-glow);
-  }
-
-  .filter-btn .count {
-    background: rgba(0,0,0,0.25);
-    padding: 1px 6px;
-    font-size: 10px;
-    border-radius: 2px;
-  }
-
-  .filter-btn.active .count {
-    background: rgba(255,255,255,0.2);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--red) 25%, transparent);
   }
 
   .btn-primary, .btn-ghost {
@@ -2332,7 +2311,7 @@
   }
 
   /* Medium radius - panels, sections, secondary cards */
-  .filter-btn,
+  .filter-select,
   .btn-primary,
   .btn-ghost,
   .view-tab,
@@ -2364,7 +2343,6 @@
   .cal-task-chip,
   .prio-tag,
   .row-check,
-  .filter-btn .count,
   .add-task-form input,
   .add-task-form select,
   .field input,
@@ -2706,7 +2684,7 @@
     /* Filter/control panel on dashboard */
     .control-panel { grid-template-columns: 1fr; padding: 12px; gap: 12px; }
     .panel-label { font-size: 10px; }
-    .filter-btn { font-size: 10px; padding: 7px 10px; }
+    .filter-select { width: 100%; min-width: 0; font-size: 12px; padding: 10px 12px; }
     .btn-primary, .btn-ghost { font-size: 10px; padding: 9px 12px; }
 
     /* Quick-add panel on mobile: stack everything */
@@ -3439,15 +3417,15 @@
   <!-- Filters + actions -->
   <section class="control-panel">
     <div class="panel-label">Filter · Deadline</div>
-    <div class="filter-group" id="filter-group">
-      <button class="filter-btn active" data-filter="all">All <span class="count" id="c-all">0</span></button>
-      <button class="filter-btn" data-filter="overdue">Overdue <span class="count" id="c-overdue">0</span></button>
-      <button class="filter-btn" data-filter="today">Today <span class="count" id="c-today">0</span></button>
-      <button class="filter-btn" data-filter="week">This Week <span class="count" id="c-week">0</span></button>
-      <button class="filter-btn" data-filter="month">This Month <span class="count" id="c-month">0</span></button>
-      <button class="filter-btn" data-filter="nodate">No Deadline <span class="count" id="c-nodate">0</span></button>
-      <button class="filter-btn" data-filter="completed">Completed <span class="count" id="c-completed">0</span></button>
-    </div>
+    <select class="filter-select" id="filter-select" title="Filter tasks by deadline">
+      <option value="all" data-label="All">All (0)</option>
+      <option value="overdue" data-label="Overdue">Overdue (0)</option>
+      <option value="today" data-label="Today">Today (0)</option>
+      <option value="week" data-label="This Week">This Week (0)</option>
+      <option value="month" data-label="This Month">This Month (0)</option>
+      <option value="nodate" data-label="No Deadline">No Deadline (0)</option>
+      <option value="completed" data-label="Completed">Completed (0)</option>
+    </select>
     <div class="control-actions">
       <div class="layout-toggle" id="layout-toggle" title="Switch layout">
         <button class="layout-btn active" data-layout="grid" title="Grid layout">
@@ -4475,12 +4453,16 @@
  
   function updateFilterCounts() {
     const allTasks = state.jobs.flatMap(j => j.tasks);
-    const filters = ['all','overdue','today','week','month','nodate','completed'];
-    filters.forEach(f => {
-      const n = allTasks.filter(t => matchesFilter(t, f)).length;
-      const el = document.getElementById('c-' + f);
-      if (el) el.textContent = n;
+    const select = document.getElementById('filter-select');
+    if (!select) return;
+    Array.from(select.options).forEach(opt => {
+      const n = allTasks.filter(t => matchesFilter(t, opt.value)).length;
+      const label = opt.dataset.label || opt.value;
+      opt.textContent = `${label} (${n})`;
     });
+    // Keep the dropdown's selection in sync with currentFilter (in case it's
+    // changed programmatically elsewhere).
+    if (select.value !== currentFilter) select.value = currentFilter;
   }
  
  
@@ -4680,12 +4662,8 @@
  
  
   // ========= FILTERS =========
-  document.getElementById('filter-group').addEventListener('click', e => {
-    const btn = e.target.closest('.filter-btn');
-    if (!btn) return;
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentFilter = btn.dataset.filter;
+  document.getElementById('filter-select').addEventListener('change', e => {
+    currentFilter = e.target.value;
     render();
   });
  
