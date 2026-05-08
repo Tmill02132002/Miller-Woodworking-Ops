@@ -3960,8 +3960,11 @@
         Add Phase
       </button>
       <div class="gantt-zoom" id="gantt-zoom">
-        <button class="gantt-zoom-btn active" data-gantt-scale="month">Month</button>
-        <button class="gantt-zoom-btn" data-gantt-scale="week">Week</button>
+        <button class="gantt-zoom-btn active" data-gantt-months="12">1 Yr</button>
+        <button class="gantt-zoom-btn" data-gantt-months="9">9 Mo</button>
+        <button class="gantt-zoom-btn" data-gantt-months="6">6 Mo</button>
+        <button class="gantt-zoom-btn" data-gantt-months="3">3 Mo</button>
+        <button class="gantt-zoom-btn" data-gantt-months="1">1 Mo</button>
       </div>
     </section>
     <div class="gantt-wrap" id="gantt-wrap">
@@ -6260,11 +6263,11 @@
   const ganttZoom       = document.getElementById('gantt-zoom');
 
   let ganttJobId    = null;
-  let ganttScale    = 'month';
+  let ganttVisibleMonths = 12;
   let lastGanttScrollJob = null;
   const collapsedPhases = new Set();
 
-  const GANTT_COL_W = { month: 60, week: 52 };
+  const GANTT_MIN_COL_W = 60;
 
   function parseGanttDate(str) {
     if (!str) return null;
@@ -6367,48 +6370,27 @@
     }
 
     const today = new Date(); today.setHours(0,0,0,0);
-    const minColW = GANTT_COL_W[ganttScale] || 60;
 
-    // Build timeline so we know how many columns exist
-    const tl    = ganttScale === 'week' ? buildWeekTimeline(phases) : buildMonthTimeline(phases);
-    const items = ganttScale === 'week' ? tl.weeks : tl.months;
+    // Always month-based timeline; zoom controls how many months fit on screen.
+    const tl      = buildMonthTimeline(phases);
+    const items   = tl.months;
     const tlStart = tl.tlStart;
     const tlEnd   = tl.tlEnd;
     const tlSpanMs = (tlEnd - tlStart) + 86400000;
 
-    // Column width:
-    //  - month view: lock to 12 visible columns (drag to pan beyond)
-    //  - week view:  stretch to fill if items fit, otherwise use minColW
+    // Column width: fit ganttVisibleMonths in the viewport, with a sensible minimum.
     const ganttWrap = document.getElementById('gantt-wrap');
     const availW = Math.max(0, (ganttWrap?.clientWidth || 1200) - 260 - 2);
-    let colW;
-    if (ganttScale === 'month') {
-      colW = Math.max(minColW, Math.floor(availW / 12));
-    } else {
-      colW = minColW;
-      if (items.length > 0 && items.length * minColW < availW) {
-        colW = Math.floor(availW / items.length);
-      }
-    }
+    const colW = Math.max(GANTT_MIN_COL_W, Math.floor(availW / ganttVisibleMonths));
     const totalW = items.length * colW;
 
     const yearHtml = ganttYearGroups(items, colW);
     let colCellsHtml = '';
-    let monthHtml = '';
-    if (ganttScale === 'week') {
-      monthHtml = items.map(w => {
-        const isNow = w <= today && today < new Date(w.getTime() + 7*86400000);
-        const lbl = (w.getMonth()+1) + '/' + w.getDate();
-        colCellsHtml += `<div class="g-col-line${isNow ? ' is-today-month' : ''}" style="width:${colW}px;"></div>`;
-        return `<div class="g-month-cell${isNow ? ' is-today-month' : ''}" style="width:${colW}px;">${lbl}</div>`;
-      }).join('');
-    } else {
-      monthHtml = items.map(m => {
-        const isNow = m.getFullYear() === today.getFullYear() && m.getMonth() === today.getMonth();
-        colCellsHtml += `<div class="g-col-line${isNow ? ' is-today-month' : ''}" style="width:${colW}px;"></div>`;
-        return `<div class="g-month-cell${isNow ? ' is-today-month' : ''}" style="width:${colW}px;">${MONTH_SHORT[m.getMonth()]}</div>`;
-      }).join('');
-    }
+    const monthHtml = items.map(m => {
+      const isNow = m.getFullYear() === today.getFullYear() && m.getMonth() === today.getMonth();
+      colCellsHtml += `<div class="g-col-line${isNow ? ' is-today-month' : ''}" style="width:${colW}px;"></div>`;
+      return `<div class="g-month-cell${isNow ? ' is-today-month' : ''}" style="width:${colW}px;">${MONTH_SHORT[m.getMonth()]}</div>`;
+    }).join('');
     const headerHtml = `<div class="g-year-row">${yearHtml}</div><div class="g-month-row">${monthHtml}</div>`;
 
     const todayPx   = dateToPx(today, tlStart, tlSpanMs, totalW);
@@ -6617,11 +6599,20 @@
   ganttZoom.addEventListener('click', e => {
     const btn = e.target.closest('.gantt-zoom-btn');
     if (!btn) return;
-    ganttScale = btn.dataset.ganttScale;
+    const newMonths = parseInt(btn.dataset.ganttMonths, 10);
+    if (!newMonths || newMonths === ganttVisibleMonths) return;
+
+    // Preserve the date currently at the left edge of the viewport across zoom changes
+    const wrap = document.getElementById('gantt-wrap');
+    const oldFrac = (wrap && wrap.scrollWidth > 0) ? (wrap.scrollLeft / wrap.scrollWidth) : 0;
+
+    ganttVisibleMonths = newMonths;
     ganttZoom.querySelectorAll('.gantt-zoom-btn').forEach(b =>
-      b.classList.toggle('active', b.dataset.ganttScale === ganttScale)
+      b.classList.toggle('active', parseInt(b.dataset.ganttMonths, 10) === ganttVisibleMonths)
     );
     renderSchedule();
+
+    if (wrap) wrap.scrollLeft = oldFrac * wrap.scrollWidth;
   });
 
   // Re-render Gantt on window resize so columns restretch to fill viewport
