@@ -3611,7 +3611,7 @@
     top: 7px;
     height: 22px;
     border-radius: var(--r-sm);
-    cursor: pointer;
+    cursor: grab;
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -3626,8 +3626,24 @@
     transition: opacity 0.12s;
     min-width: 4px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.45);
+    user-select: none;
   }
   .g-bar:hover { opacity: 1; }
+  .g-bar.is-dragging { opacity: 1; cursor: grabbing; box-shadow: 0 2px 10px rgba(0,0,0,0.6); }
+  .g-bar.edge-l { cursor: ew-resize; }
+  .g-bar.edge-r { cursor: ew-resize; }
+  /* Chain icon next to linked phases */
+  .g-link-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: var(--violet);
+    margin-right: 4px;
+  }
+  .g-link-icon { width: 11px; height: 11px; }
   /* Today vertical line spanning full gantt height */
   .g-today-line {
     position: absolute;
@@ -3713,6 +3729,18 @@
   }
   /* Phase modal */
   #modal-phase .modal { max-width: 420px; }
+  #modal-phase select#phase-link-input {
+    width: 100%;
+    background: var(--bg-2);
+    color: var(--ink-0);
+    border: 1px solid var(--line-bright);
+    border-radius: var(--r-md);
+    padding: 8px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  #modal-phase select#phase-link-input:focus { outline: none; border-color: var(--blue); }
   .phase-date-row { display: flex; gap: 12px; }
   .phase-date-row .field { flex: 1; }
   .phase-color-row { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
@@ -4014,6 +4042,16 @@
     <div class="field">
       <label>Color</label>
       <div class="phase-color-row" id="phase-color-picker"></div>
+    </div>
+    <div class="field">
+      <label>Link to phase (optional)</label>
+      <select id="phase-link-input">
+        <option value="">— No link —</option>
+      </select>
+    </div>
+    <div class="field" id="phase-offset-field" style="display:none;">
+      <label>Days between linked phase end and this start</label>
+      <input type="number" id="phase-offset-input" value="0" step="1" />
     </div>
     <div class="modal-actions modal-actions-split">
       <button class="btn-danger" id="phase-delete-btn" style="display:none;">Delete</button>
@@ -4401,6 +4439,8 @@
             end_date: p.end_date || null,
             color: p.color || null,
             sort_order: p.sort_order || 0,
+            linked_to: p.linked_to || null,
+            link_offset_days: p.link_offset_days || 0,
           }));
         }
       } catch (_) { state.phases = []; }
@@ -6284,12 +6324,82 @@
   let lastGanttScrollJob = null;
   const collapsedPhases = new Set();
 
+  // Snapshot of the most recent renderSchedule pass so the bar-drag handler
+  // can convert pixels back to dates without recomputing the timeline.
+  let liveChartItems = [];
+  let liveChartColW  = 60;
+
   const GANTT_MIN_COL_W = 60;
 
   function parseGanttDate(str) {
     if (!str) return null;
     const [y, m, d] = str.split('-').map(Number);
     return new Date(y, m - 1, d);
+  }
+
+  function ymdString(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  // Computes the date a successor should start at, given its predecessor's
+  // end date and the gap (link_offset_days = 0 means "next day").
+  function computeLinkedStart(predEndStr, offsetDays) {
+    if (!predEndStr) return null;
+    const d = parseGanttDate(predEndStr);
+    d.setDate(d.getDate() + 1 + (offsetDays || 0));
+    return d;
+  }
+
+  // Walks the link graph forward from `rootId`, recomputing dates for every
+  // transitive successor while preserving each one's duration. Returns a list
+  // of {id, start_date, end_date} updates. Mutates state.phases in place so
+  // the caller sees the new dates immediately on re-render.
+  function cascadeLinkedDates(rootId) {
+    const updates = [];
+    const visited = new Set();
+    const queue   = [rootId];
+    while (queue.length) {
+      const predId = queue.shift();
+      if (visited.has(predId)) continue;
+      visited.add(predId);
+      const pred = state.phases.find(p => p.id === predId);
+      if (!pred || !pred.end_date) continue;
+
+      state.phases.filter(p => p.linked_to === predId).forEach(succ => {
+        const newStart = computeLinkedStart(pred.end_date, succ.link_offset_days);
+        if (!newStart) return;
+        // preserve duration
+        let durationDays = 0;
+        if (succ.start_date && succ.end_date) {
+          const s = parseGanttDate(succ.start_date);
+          const e = parseGanttDate(succ.end_date);
+          durationDays = Math.max(0, Math.round((e - s) / 86400000));
+        }
+        const newEnd = new Date(newStart);
+        newEnd.setDate(newEnd.getDate() + durationDays);
+        const newStartStr = ymdString(newStart);
+        const newEndStr   = ymdString(newEnd);
+        if (succ.start_date !== newStartStr || succ.end_date !== newEndStr) {
+          succ.start_date = newStartStr;
+          succ.end_date   = newEndStr;
+          updates.push({ id: succ.id, start_date: newStartStr, end_date: newEndStr });
+        }
+        queue.push(succ.id);
+      });
+    }
+    return updates;
+  }
+
+  // Persist a list of {id, start_date, end_date} cascade updates with .update()
+  // (not upsert) so the other columns stay intact.
+  async function persistCascadeUpdates(updates) {
+    for (const u of updates) {
+      const { error } = await sb.from('schedule_phases')
+        .update({ start_date: u.start_date, end_date: u.end_date })
+        .eq('id', u.id);
+      if (error) { showError('Linked phase save failed', error.message); return false; }
+    }
+    return true;
   }
 
   function buildMonthTimeline(phases) {
@@ -6474,9 +6584,15 @@
       const indent = 8 + p._level * 20;
       const expandCls = hasChildren ? (collapsedPhases.has(p.id) ? '' : ' expanded') : ' leaf';
 
+      const linkSvg   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="g-link-icon"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
+      const linkBadge = p.linked_to
+        ? `<span class="g-link-badge" title="Linked to predecessor">${linkSvg}</span>`
+        : '';
+
       const treeCell = `<div class="g-tree">
         <div class="g-tree-indent" style="padding-left:${indent}px;">
           <button class="g-expand-btn${expandCls}" data-action="expand" data-phase-id="${p.id}">${expandSvg}</button>
+          ${linkBadge}
           <span class="g-phase-name lvl-${lvl}" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</span>
         </div>
         <div class="g-row-actions">
@@ -6523,6 +6639,10 @@
       const target = Math.max(0, todayPx - 80);
       ganttWrap.scrollLeft = target;
     }
+
+    // Snapshot for drag math
+    liveChartItems = items;
+    liveChartColW  = colW;
   }
 
   // ---- Phase modal ----
@@ -6536,6 +6656,9 @@
   const phaseSaveBtn    = document.getElementById('phase-save-btn');
   const phaseModalTitle = document.getElementById('modal-phase-title');
   const phaseModalSub   = document.getElementById('modal-phase-sub');
+  const phaseLinkInput  = document.getElementById('phase-link-input');
+  const phaseOffsetInput= document.getElementById('phase-offset-input');
+  const phaseOffsetField= document.getElementById('phase-offset-field');
 
   let editingPhaseId     = null;
   let editingPhaseParent = null;
@@ -6566,9 +6689,62 @@
       `<div class="phase-color-swatch${selectedPhaseColor === c ? ' sel' : ''}" data-color="${c}" style="background:${c};"></div>`
     ).join('');
 
+    // Populate "Link to" dropdown — phases in this job, excluding self,
+    // descendants, and any phase that already chains back to this one (cycle guard).
+    phaseLinkInput.innerHTML = '<option value="">— No link —</option>';
+    const exclude = new Set();
+    if (phaseId) {
+      exclude.add(phaseId);
+      // descendants by parent_id
+      const collectDesc = id => {
+        state.phases.filter(p => p.parent_id === id).forEach(c => { exclude.add(c.id); collectDesc(c.id); });
+      };
+      collectDesc(phaseId);
+      // anyone that already chains to phaseId (would create a cycle)
+      state.phases.forEach(p => {
+        let cur = p;
+        const seen = new Set();
+        while (cur && cur.linked_to && !seen.has(cur.id)) {
+          seen.add(cur.id);
+          if (cur.linked_to === phaseId) { exclude.add(p.id); break; }
+          cur = state.phases.find(x => x.id === cur.linked_to);
+        }
+      });
+    }
+    // Build a flat indented list using parent_id depth
+    const phaseLevel = id => {
+      let lvl = 0, cur = state.phases.find(p => p.id === id);
+      while (cur && cur.parent_id) { lvl++; cur = state.phases.find(p => p.id === cur.parent_id); }
+      return lvl;
+    };
+    state.phases
+      .filter(p => p.job_id === ganttJobId && !exclude.has(p.id))
+      .sort((a, b) => (a.sort_order - b.sort_order) || a.id.localeCompare(b.id))
+      .forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = '   '.repeat(phaseLevel(p.id)) + p.name;
+        phaseLinkInput.appendChild(opt);
+      });
+
+    if (ex && ex.linked_to) {
+      phaseLinkInput.value = ex.linked_to;
+      phaseOffsetField.style.display = 'block';
+      phaseOffsetInput.value = ex.link_offset_days || 0;
+    } else {
+      phaseLinkInput.value = '';
+      phaseOffsetField.style.display = 'none';
+      phaseOffsetInput.value = 0;
+    }
+
     modalPhase.style.display = 'flex';
     setTimeout(() => phaseNameInput.focus(), 50);
   }
+
+  // Toggle the offset field whenever the link dropdown changes
+  phaseLinkInput.addEventListener('change', () => {
+    phaseOffsetField.style.display = phaseLinkInput.value ? 'block' : 'none';
+  });
 
   function closePhaseModal() {
     modalPhase.style.display = 'none';
@@ -6594,18 +6770,46 @@
 
     const id = editingPhaseId || crypto.randomUUID();
     const existingPhase = editingPhaseId ? state.phases.find(p => p.id === editingPhaseId) : null;
+    const linkedTo  = phaseLinkInput.value || null;
+    const offsetDays = parseInt(phaseOffsetInput.value, 10) || 0;
+
+    let startDate = phaseStartInput.value || null;
+    let endDate   = phaseEndInput.value   || null;
+
+    // If this phase is linked, override its start with the predecessor-derived
+    // value and preserve the user's duration (or the existing one).
+    if (linkedTo) {
+      const pred = state.phases.find(p => p.id === linkedTo);
+      if (pred && pred.end_date) {
+        const newStart = computeLinkedStart(pred.end_date, offsetDays);
+        if (newStart) {
+          let durationDays = 0;
+          if (startDate && endDate) {
+            durationDays = Math.max(0, Math.round((parseGanttDate(endDate) - parseGanttDate(startDate)) / 86400000));
+          } else if (existingPhase && existingPhase.start_date && existingPhase.end_date) {
+            durationDays = Math.max(0, Math.round((parseGanttDate(existingPhase.end_date) - parseGanttDate(existingPhase.start_date)) / 86400000));
+          }
+          const newEnd = new Date(newStart); newEnd.setDate(newEnd.getDate() + durationDays);
+          startDate = ymdString(newStart);
+          endDate   = ymdString(newEnd);
+        }
+      }
+    }
+
     const payload = {
       id,
       user_id:    currentUser.id,
       job_id:     ganttJobId,
       parent_id:  editingPhaseId ? (existingPhase?.parent_id ?? null) : editingPhaseParent,
       name,
-      start_date: phaseStartInput.value || null,
-      end_date:   phaseEndInput.value   || null,
+      start_date: startDate,
+      end_date:   endDate,
       color:      selectedPhaseColor || null,
       sort_order: existingPhase
         ? existingPhase.sort_order
         : state.phases.filter(p => p.job_id === ganttJobId).length,
+      linked_to:        linkedTo,
+      link_offset_days: offsetDays,
     };
 
     const { error } = await sb.from('schedule_phases').upsert(payload, { onConflict: 'id' });
@@ -6613,6 +6817,10 @@
 
     const idx = state.phases.findIndex(p => p.id === id);
     if (idx >= 0) state.phases[idx] = payload; else state.phases.push(payload);
+
+    // Cascade to any phases linked to this one (and transitively to theirs)
+    const updates = cascadeLinkedDates(id);
+    if (updates.length) await persistCascadeUpdates(updates);
 
     closePhaseModal();
     renderSchedule();
@@ -7137,6 +7345,152 @@
     clearTimeout(ganttResizeTimer);
     ganttResizeTimer = setTimeout(renderSchedule, 120);
   });
+
+  // ---- Inverse of dateToPx: pixel offset within the timeline → calendar date ----
+  function pxToDate(px, items, colW) {
+    if (!items.length || colW <= 0) return null;
+    if (px < 0) px = 0;
+    let monthIdx = Math.floor(px / colW);
+    if (monthIdx >= items.length) {
+      const last = items[items.length - 1];
+      return new Date(last.getFullYear(), last.getMonth() + 1, 0);
+    }
+    const m = items[monthIdx];
+    const dim = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+    let day = Math.round(((px - monthIdx * colW) / colW) * dim) + 1;
+    if (day < 1) day = 1;
+    if (day > dim) day = dim;
+    return new Date(m.getFullYear(), m.getMonth(), day);
+  }
+
+  // ---- Click-and-drag a Gantt bar to move/resize it ----
+  let barDrag = null;
+  ganttContent.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    const bar = e.target.closest('.g-bar');
+    if (!bar) return;
+    const phaseId = bar.dataset.phaseId;
+    const phase = state.phases.find(p => p.id === phaseId);
+    if (!phase || !phase.start_date || !phase.end_date) return;
+    if (!liveChartItems.length || !liveChartColW) return;
+
+    const rect = bar.getBoundingClientRect();
+    const offsetInBar = e.clientX - rect.left;
+    const EDGE = Math.min(10, Math.max(4, rect.width / 4));
+    let mode;
+    if (offsetInBar < EDGE)                       mode = 'resize-start';
+    else if (offsetInBar > rect.width - EDGE)     mode = 'resize-end';
+    else                                          mode = 'move';
+
+    // Linked phases have their start chained to the predecessor — only the
+    // end (duration) is freely draggable. Move/resize-start are no-ops here.
+    if (phase.linked_to && mode !== 'resize-end') return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    bar.classList.add('is-dragging');
+
+    barDrag = {
+      bar,
+      phase,
+      mode,
+      startX: e.clientX,
+      origStart: parseGanttDate(phase.start_date),
+      origEnd:   parseGanttDate(phase.end_date),
+      colW:  liveChartColW,
+      items: liveChartItems,
+      moved: false,
+    };
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (!barDrag) return;
+    const dx = e.clientX - barDrag.startX;
+    if (!barDrag.moved && Math.abs(dx) > 2) barDrag.moved = true;
+    if (!barDrag.moved) return;
+
+    // Convert the original start (or end+1) pixel → date, add the px delta,
+    // then snap to the date that lands at that new pixel position. This keeps
+    // the day math correct across months of different lengths.
+    const startPx = (() => {
+      const items = barDrag.items, colW = barDrag.colW;
+      const first = items[0];
+      const diff = (barDrag.origStart.getFullYear() - first.getFullYear()) * 12 + (barDrag.origStart.getMonth() - first.getMonth());
+      const dim = new Date(barDrag.origStart.getFullYear(), barDrag.origStart.getMonth() + 1, 0).getDate();
+      return diff * colW + ((barDrag.origStart.getDate() - 1) / dim) * colW;
+    })();
+    const endPlusOnePx = (() => {
+      const items = barDrag.items, colW = barDrag.colW;
+      const first = items[0];
+      const after = new Date(barDrag.origEnd.getTime() + 86400000);
+      const diff = (after.getFullYear() - first.getFullYear()) * 12 + (after.getMonth() - first.getMonth());
+      if (diff >= items.length) return items.length * colW;
+      const dim = new Date(after.getFullYear(), after.getMonth() + 1, 0).getDate();
+      return diff * colW + ((after.getDate() - 1) / dim) * colW;
+    })();
+
+    let newStart = barDrag.origStart;
+    let newEnd   = barDrag.origEnd;
+
+    if (barDrag.mode === 'move') {
+      const candStart = pxToDate(startPx + dx, barDrag.items, barDrag.colW);
+      if (!candStart) return;
+      const durDays = Math.round((barDrag.origEnd - barDrag.origStart) / 86400000);
+      newStart = candStart;
+      newEnd   = new Date(candStart);
+      newEnd.setDate(newEnd.getDate() + durDays);
+    } else if (barDrag.mode === 'resize-start') {
+      const cand = pxToDate(startPx + dx, barDrag.items, barDrag.colW);
+      if (!cand) return;
+      newStart = cand > barDrag.origEnd ? new Date(barDrag.origEnd) : cand;
+    } else if (barDrag.mode === 'resize-end') {
+      // The bar's right edge represents end_date + 1 day, so snap that, then -1
+      const cand = pxToDate(endPlusOnePx + dx, barDrag.items, barDrag.colW);
+      if (!cand) return;
+      const candEnd = new Date(cand);
+      candEnd.setDate(candEnd.getDate() - 1);
+      newEnd = candEnd < barDrag.origStart ? new Date(barDrag.origStart) : candEnd;
+    }
+
+    barDrag.phase.start_date = ymdString(newStart);
+    barDrag.phase.end_date   = ymdString(newEnd);
+
+    // Live cascade preview so successors track during the drag
+    cascadeLinkedDates(barDrag.phase.id);
+    renderSchedule();
+  });
+
+  window.addEventListener('mouseup', async () => {
+    if (!barDrag) return;
+    const drag = barDrag;
+    barDrag = null;
+    drag.bar.classList.remove('is-dragging');
+    if (!drag.moved) return;
+
+    // Mark the bar so the next synthetic click (which would otherwise open the
+    // edit modal via data-action="edit-phase") gets swallowed by our suppressor.
+    drag.bar.dataset.justDragged = '1';
+
+    // Persist the dragged phase + cascaded successors
+    const phase = drag.phase;
+    const { error } = await sb.from('schedule_phases')
+      .update({ start_date: phase.start_date, end_date: phase.end_date })
+      .eq('id', phase.id);
+    if (error) { showError('Could not save drag', error.message); return; }
+    const updates = cascadeLinkedDates(phase.id);
+    if (updates.length) await persistCascadeUpdates(updates);
+  });
+
+  // Suppress the synthetic click that follows a drag so it doesn't open the modal
+  ganttContent.addEventListener('click', e => {
+    const bar = e.target.closest('.g-bar');
+    if (!bar) return;
+    if (bar.dataset.justDragged === '1') {
+      delete bar.dataset.justDragged;
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
 
   // ---- Click-and-drag pan for the Gantt timeline ----
   const ganttWrapEl = document.getElementById('gantt-wrap');
