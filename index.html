@@ -26,7 +26,7 @@
 <title>Miller Woodworking // Operations Command</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -4228,9 +4228,9 @@
  
  
   // ========= LOGO =========
-  document.getElementById('brand-logo').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 120" preserveAspectRatio="xMidYMid meet"><g transform="translate(130, 30)"><line x1="0" y1="-30" x2="0" y2="30" stroke="currentColor" stroke-width="2.5"/><line x1="-30" y1="0" x2="30" y2="0" stroke="currentColor" stroke-width="2.5"/><g fill="none" stroke="#e63946" stroke-width="6"><path d="M -14.5 -4 A 15 15 0 0 1 -4 -14.5"/><path d="M 4 -14.5 A 15 15 0 0 1 14.5 -4"/><path d="M 14.5 4 A 15 15 0 0 1 4 14.5"/><path d="M -4 14.5 A 15 15 0 0 1 -14.5 4"/></g><circle cx="0" cy="0" r="3.5" fill="#e63946"/></g><text x="130" y="100" text-anchor="middle" font-family="Impact, sans-serif" font-weight="700" font-size="44" letter-spacing="4" fill="currentColor">MILLER</text></svg>`;
+  document.getElementById('brand-logo').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 120" preserveAspectRatio="xMidYMid meet"><circle cx="120" cy="22" r="9" fill="none" stroke="#e63946" stroke-width="3"/><g stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="butt"><line x1="120" y1="2" x2="120" y2="48"/><line x1="100" y1="22" x2="140" y2="22"/></g><text x="120" y="105" text-anchor="middle" font-family="Cinzel, 'Trajan Pro', 'Times New Roman', serif" font-weight="700" font-size="60" letter-spacing="2" fill="currentColor">MILLER</text></svg>`;
  
-  document.getElementById('auth-logo').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><g transform="translate(50, 50)"><line x1="0" y1="-36" x2="0" y2="36" stroke="currentColor" stroke-width="3"/><line x1="-36" y1="0" x2="36" y2="0" stroke="currentColor" stroke-width="3"/><g fill="none" stroke="#e63946" stroke-width="7"><path d="M -18 -5 A 19 19 0 0 1 -5 -18"/><path d="M 5 -18 A 19 19 0 0 1 18 -5"/><path d="M 18 5 A 19 19 0 0 1 5 18"/><path d="M -5 18 A 19 19 0 0 1 -18 5"/></g><circle cx="0" cy="0" r="4.5" fill="#e63946"/></g></svg>`;
+  document.getElementById('auth-logo').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"><circle cx="50" cy="50" r="16" fill="none" stroke="#e63946" stroke-width="3.5"/><g stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="butt"><line x1="50" y1="15" x2="50" y2="85"/><line x1="15" y1="50" x2="85" y2="50"/></g></svg>`;
  
  
   // ========= SUPABASE CONFIG =========
@@ -6742,7 +6742,7 @@
 
   // PDF-friendly version of the Miller mark — explicit dark strokes/text
   // (the in-app logo uses currentColor which is light gray on the dark theme).
-  const PDF_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 120" preserveAspectRatio="xMidYMid meet"><g transform="translate(130, 30)"><line x1="0" y1="-30" x2="0" y2="30" stroke="#1a1f2a" stroke-width="2.5"/><line x1="-30" y1="0" x2="30" y2="0" stroke="#1a1f2a" stroke-width="2.5"/><g fill="none" stroke="#e63946" stroke-width="6"><path d="M -14.5 -4 A 15 15 0 0 1 -4 -14.5"/><path d="M 4 -14.5 A 15 15 0 0 1 14.5 -4"/><path d="M 14.5 4 A 15 15 0 0 1 4 14.5"/><path d="M -4 14.5 A 15 15 0 0 1 -14.5 4"/></g><circle cx="0" cy="0" r="3.5" fill="#e63946"/></g><text x="130" y="100" text-anchor="middle" font-family="Impact, 'Arial Black', sans-serif" font-weight="700" font-size="44" letter-spacing="4" fill="#1a1f2a">MILLER</text></svg>`;
+  const PDF_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 120" preserveAspectRatio="xMidYMid meet"><circle cx="120" cy="22" r="9" fill="none" stroke="#e63946" stroke-width="3"/><g stroke="#1a1f2a" stroke-width="3" fill="none" stroke-linecap="butt"><line x1="120" y1="2" x2="120" y2="48"/><line x1="100" y1="22" x2="140" y2="22"/></g><text x="120" y="105" text-anchor="middle" font-family="Cinzel, 'Trajan Pro', 'Times New Roman', serif" font-weight="700" font-size="60" letter-spacing="2" fill="#1a1f2a">MILLER</text></svg>`;
 
   // Render an SVG string into a PNG data URL via a temporary <img>+canvas.
   function svgToPngDataUrl(svg, w, h) {
@@ -6801,7 +6801,7 @@
     const MARGIN       = 12;
     const TITLE_H      = 32;
     const LOGO_W       = 28;
-    const LOGO_H       = 13;
+    const LOGO_H       = 14;
     const TREE_W       = 58;
     const ROW_H        = 7;
     const HEADER_H     = 13;
