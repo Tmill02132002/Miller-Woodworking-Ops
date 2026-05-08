@@ -28,6 +28,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
   :root {
     --bg-0: #0a0c0f;
@@ -3964,6 +3965,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Add Phase
       </button>
+      <button class="btn-ghost" id="gantt-export-btn" style="display:none;gap:6px;align-items:center;" title="Download as PNG">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export PNG
+      </button>
       <div class="gantt-zoom" id="gantt-zoom">
         <button class="gantt-zoom-btn active" data-gantt-months="12">1 Yr</button>
         <button class="gantt-zoom-btn" data-gantt-months="9">9 Mo</button>
@@ -6264,6 +6269,7 @@
   // ========= SCHEDULE / GANTT =========
   const ganttJobSelect  = document.getElementById('gantt-job-select');
   const ganttAddRootBtn = document.getElementById('gantt-add-root-phase');
+  const ganttExportBtn  = document.getElementById('gantt-export-btn');
   const ganttContent    = document.getElementById('gantt-content');
   const ganttZoom       = document.getElementById('gantt-zoom');
 
@@ -6371,6 +6377,7 @@
     if (!ganttJobId) {
       ganttContent.innerHTML = '<div class="gantt-empty-state">Select a job to view its schedule.</div>';
       ganttAddRootBtn.style.display = 'none';
+      ganttExportBtn.style.display = 'none';
       return;
     }
     const job = state.jobs.find(j => j.id === ganttJobId);
@@ -6378,6 +6385,7 @@
 
     const phases = state.phases.filter(p => p.job_id === ganttJobId);
     ganttAddRootBtn.style.display = 'flex';
+    ganttExportBtn.style.display = phases.length > 0 ? 'flex' : 'none';
 
     if (phases.length === 0) {
       ganttContent.innerHTML = '<div class="gantt-empty-state">No phases yet.<div class="g-empty-hint">Click "+ Add Phase" to build the schedule for this job.</div></div>';
@@ -6644,6 +6652,80 @@
   });
 
   ganttAddRootBtn.addEventListener('click', () => openPhaseModal(null, null));
+
+  // ---- Export to PNG ----
+  async function exportGanttPng() {
+    if (!ganttJobId || !window.html2canvas) {
+      if (!window.html2canvas) showError('Export unavailable', 'html2canvas library failed to load. Check your connection and reload.');
+      return;
+    }
+    const job = state.jobs.find(j => j.id === ganttJobId);
+    if (!job) return;
+
+    const original = ganttContent;
+    const naturalW = original.scrollWidth;
+    const naturalH = original.scrollHeight;
+    if (!naturalW || !naturalH) return;
+
+    ganttExportBtn.disabled = true;
+    const origLabel = ganttExportBtn.innerHTML;
+    ganttExportBtn.innerHTML = 'Exporting…';
+
+    // Build an offscreen render container at full natural size, with a header
+    const stage = document.createElement('div');
+    stage.style.cssText = `position:fixed;top:-20000px;left:0;width:${naturalW}px;background:#0a0c0f;font-family:'Inter',sans-serif;padding:0;z-index:-1;`;
+
+    const header = document.createElement('div');
+    header.style.cssText = `padding:24px 20px 18px;background:#10141a;border-bottom:1px solid #252c38;`;
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    header.innerHTML = `
+      <div style="font-family:'Inter',sans-serif;font-size:22px;font-weight:700;color:#e6e9ee;letter-spacing:0.01em;">${escapeHtml(job.name)}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:#6b7280;text-transform:uppercase;margin-top:6px;">
+        ${escapeHtml(job.code || '—')}${job.client ? ' · ' + escapeHtml(job.client) : ''} · GENERATED ${dateStr}
+      </div>
+    `;
+
+    const clone = original.cloneNode(true);
+    // Strip sticky behavior so the clone lays out flat
+    clone.querySelectorAll('.g-tree, .g-header, .g-header .g-tree, .g-header .g-tl').forEach(el => {
+      el.style.position = 'static';
+    });
+    // Remove the today line from the export (it's a runtime overlay)
+    clone.querySelectorAll('.g-today-line').forEach(el => el.remove());
+    // Remove hover-only row action buttons
+    clone.querySelectorAll('.g-row-actions').forEach(el => el.remove());
+    // Hide expand-button visuals (decorative chevrons cause clutter in static export)
+    clone.querySelectorAll('.g-expand-btn').forEach(el => { el.style.opacity = '0'; });
+
+    stage.appendChild(header);
+    stage.appendChild(clone);
+    document.body.appendChild(stage);
+
+    try {
+      const canvas = await window.html2canvas(stage, {
+        backgroundColor: '#0a0c0f',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        width: naturalW,
+        height: stage.scrollHeight,
+      });
+      const safeName = (job.code || job.name || 'job').replace(/[^a-z0-9-_]+/gi, '_');
+      const link = document.createElement('a');
+      link.download = `${safeName}_schedule_${dateStr}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (e) {
+      showError('Export failed', e.message || String(e));
+    } finally {
+      document.body.removeChild(stage);
+      ganttExportBtn.disabled = false;
+      ganttExportBtn.innerHTML = origLabel;
+    }
+  }
+
+  ganttExportBtn.addEventListener('click', exportGanttPng);
 
   ganttZoom.addEventListener('click', e => {
     const btn = e.target.closest('.gantt-zoom-btn');
