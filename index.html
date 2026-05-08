@@ -3729,6 +3729,59 @@
   }
   /* Phase modal */
   #modal-phase .modal { max-width: 420px; }
+  .phase-milestone-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--ink-1);
+    user-select: none;
+  }
+  .phase-milestone-toggle input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    accent-color: var(--red);
+  }
+  /* Milestone marker on the chart (bullseye) */
+  .g-milestone {
+    position: absolute;
+    top: 8px;
+    width: 20px;
+    height: 20px;
+    cursor: grab;
+    user-select: none;
+    transform: translateX(-50%);
+    z-index: 2;
+    filter: drop-shadow(0 1px 3px rgba(0,0,0,0.6));
+  }
+  .g-milestone.is-dragging { cursor: grabbing; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.8)); }
+  .g-milestone-label {
+    position: absolute;
+    top: 11px;
+    height: 14px;
+    line-height: 14px;
+    padding-left: 14px;
+    font-size: 10.5px;
+    font-family: 'Inter', sans-serif;
+    color: var(--ink-1);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 2;
+  }
+  /* Dependency arrows */
+  .g-link-overlay {
+    position: absolute;
+    pointer-events: none;
+    z-index: 1;
+    overflow: visible;
+  }
+  .g-link-path {
+    fill: none;
+    stroke: rgba(180, 186, 198, 0.55);
+    stroke-width: 1.2;
+  }
   #modal-phase select#phase-link-input {
     width: 100%;
     background: var(--bg-2);
@@ -4029,12 +4082,18 @@
       <label>Phase Name</label>
       <input type="text" id="phase-name-input" placeholder="e.g. Cabinet Build, Finishing, Site Install" maxlength="80" />
     </div>
+    <div class="field phase-milestone-field">
+      <label class="phase-milestone-toggle">
+        <input type="checkbox" id="phase-milestone-input" />
+        <span>Milestone (single-date checkpoint)</span>
+      </label>
+    </div>
     <div class="phase-date-row">
       <div class="field">
-        <label>Start Date</label>
+        <label id="phase-start-label">Start Date</label>
         <input type="date" id="phase-start-input" />
       </div>
-      <div class="field">
+      <div class="field" id="phase-end-field">
         <label>End Date</label>
         <input type="date" id="phase-end-input" />
       </div>
@@ -4441,6 +4500,7 @@
             sort_order: p.sort_order || 0,
             linked_to: p.linked_to || null,
             link_offset_days: p.link_offset_days || 0,
+            is_milestone: !!p.is_milestone,
           }));
         }
       } catch (_) { state.phases = []; }
@@ -6577,6 +6637,24 @@
     const delSvg    = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
 
     const visible = buildVisiblePhases(phases, null, 0, []);
+
+    // Pre-compute each visible phase's bar/milestone bounds so the dependency
+    // arrow overlay knows where each chain endpoint lands.
+    const ROW_H_PX = 36;
+    const phasePositions = new Map();
+    visible.forEach((p, i) => {
+      const rowCenterY = i * ROW_H_PX + ROW_H_PX / 2;
+      let leftPx = null, rightPx = null;
+      if (p.is_milestone && p.start_date) {
+        const x = dateToPx(parseGanttDate(p.start_date), items, colW);
+        leftPx = rightPx = x;
+      } else if (p.start_date && p.end_date) {
+        leftPx  = dateToPx(parseGanttDate(p.start_date), items, colW);
+        rightPx = dateToPx(new Date(parseGanttDate(p.end_date).getTime() + 86400000), items, colW);
+      }
+      phasePositions.set(p.id, { rowCenterY, leftPx, rightPx, isMilestone: !!p.is_milestone });
+    });
+
     const rowsHtml = visible.map(p => {
       const hasChildren = phases.some(x => x.parent_id === p.id);
       const color  = p.color || job.color;
@@ -6603,7 +6681,14 @@
       </div>`;
 
       let barHtml = '';
-      if (p.start_date && p.end_date) {
+      if (p.is_milestone && p.start_date) {
+        // Bullseye marker at a single date
+        const s = parseGanttDate(p.start_date);
+        const x = dateToPx(s, items, colW);
+        const fmt = d => `${MONTH_SHORT[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+        const tip = `${p.name}\n${fmt(s)}`;
+        barHtml = `<svg class="g-milestone" data-action="edit-phase" data-phase-id="${p.id}" style="left:${x}px;" width="20" height="20" viewBox="0 0 20 20"><title>${escapeHtml(tip)}</title><circle cx="10" cy="10" r="9" fill="${color}" stroke="rgba(0,0,0,0.55)" stroke-width="1"/><circle cx="10" cy="10" r="5" fill="#ffffff"/><circle cx="10" cy="10" r="2" fill="${color}"/></svg><span class="g-milestone-label" style="left:${x + 12}px;">${escapeHtml(p.name)}</span>`;
+      } else if (p.start_date && p.end_date) {
         const s = parseGanttDate(p.start_date);
         const e = parseGanttDate(p.end_date);
         const barL = Math.max(0, dateToPx(s, items, colW));
@@ -6624,12 +6709,37 @@
       </div>`;
     }).join('');
 
+    // Dependency arrows — L-shape path from predecessor end to successor start
+    const linkPaths = [];
+    visible.forEach(p => {
+      if (!p.linked_to) return;
+      const succ = phasePositions.get(p.id);
+      const pred = phasePositions.get(p.linked_to);
+      if (!succ || !pred || pred.rightPx == null || succ.leftPx == null) return;
+      const startX = pred.rightPx;
+      const startY = pred.rowCenterY;
+      const endX   = succ.leftPx;
+      const endY   = succ.rowCenterY;
+      // Elbow sits 8px past the predecessor end (or 6px before the successor
+      // start when the successor begins close to / before the predecessor end).
+      const elbowX = Math.max(startX + 8, endX - 6);
+      // Arrowhead nudge so the marker tip just touches the bar's left edge
+      const tipX = endX - 1;
+      linkPaths.push(`M ${startX} ${startY} L ${elbowX} ${startY} L ${elbowX} ${endY} L ${tipX} ${endY}`);
+    });
+    let linkOverlayHtml = '';
+    if (linkPaths.length) {
+      const overlayH = visible.length * ROW_H_PX;
+      linkOverlayHtml = `<svg class="g-link-overlay" style="left:260px;top:${headerHeight}px;width:${totalW}px;height:${overlayH}px;" viewBox="0 0 ${totalW} ${overlayH}" preserveAspectRatio="none"><defs><marker id="g-link-arrow" markerWidth="6" markerHeight="6" refX="5.5" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L6,3 L0,6 Z" fill="rgba(180,186,198,0.75)"/></marker></defs>${linkPaths.map(d => `<path class="g-link-path" d="${d}" marker-end="url(#g-link-arrow)"/>`).join('')}</svg>`;
+    }
+
     ganttContent.innerHTML = `
       <div class="g-row g-header">
         <div class="g-tree">// PHASE</div>
         <div class="g-tl" style="width:${totalW}px;">${headerHtml}</div>
       </div>
       ${rowsHtml}
+      ${linkOverlayHtml}
       ${todayLine}
     `;
 
@@ -6659,6 +6769,9 @@
   const phaseLinkInput  = document.getElementById('phase-link-input');
   const phaseOffsetInput= document.getElementById('phase-offset-input');
   const phaseOffsetField= document.getElementById('phase-offset-field');
+  const phaseMilestoneInput = document.getElementById('phase-milestone-input');
+  const phaseStartLabel     = document.getElementById('phase-start-label');
+  const phaseEndField       = document.getElementById('phase-end-field');
 
   let editingPhaseId     = null;
   let editingPhaseParent = null;
@@ -6737,9 +6850,20 @@
       phaseOffsetInput.value = 0;
     }
 
+    // Milestone toggle: hide end-date field and rename "Start Date" → "Milestone Date"
+    phaseMilestoneInput.checked = !!(ex && ex.is_milestone);
+    applyMilestoneToggle();
+
     modalPhase.style.display = 'flex';
     setTimeout(() => phaseNameInput.focus(), 50);
   }
+
+  function applyMilestoneToggle() {
+    const isMs = phaseMilestoneInput.checked;
+    phaseStartLabel.textContent = isMs ? 'Milestone Date' : 'Start Date';
+    phaseEndField.style.display = isMs ? 'none' : '';
+  }
+  phaseMilestoneInput.addEventListener('change', applyMilestoneToggle);
 
   // Toggle the offset field whenever the link dropdown changes
   phaseLinkInput.addEventListener('change', () => {
@@ -6772,9 +6896,10 @@
     const existingPhase = editingPhaseId ? state.phases.find(p => p.id === editingPhaseId) : null;
     const linkedTo  = phaseLinkInput.value || null;
     const offsetDays = parseInt(phaseOffsetInput.value, 10) || 0;
+    const isMilestone = !!phaseMilestoneInput.checked;
 
     let startDate = phaseStartInput.value || null;
-    let endDate   = phaseEndInput.value   || null;
+    let endDate   = isMilestone ? startDate : (phaseEndInput.value || null);
 
     // If this phase is linked, override its start with the predecessor-derived
     // value and preserve the user's duration (or the existing one).
@@ -6784,10 +6909,12 @@
         const newStart = computeLinkedStart(pred.end_date, offsetDays);
         if (newStart) {
           let durationDays = 0;
-          if (startDate && endDate) {
-            durationDays = Math.max(0, Math.round((parseGanttDate(endDate) - parseGanttDate(startDate)) / 86400000));
-          } else if (existingPhase && existingPhase.start_date && existingPhase.end_date) {
-            durationDays = Math.max(0, Math.round((parseGanttDate(existingPhase.end_date) - parseGanttDate(existingPhase.start_date)) / 86400000));
+          if (!isMilestone) {
+            if (startDate && endDate) {
+              durationDays = Math.max(0, Math.round((parseGanttDate(endDate) - parseGanttDate(startDate)) / 86400000));
+            } else if (existingPhase && existingPhase.start_date && existingPhase.end_date && !existingPhase.is_milestone) {
+              durationDays = Math.max(0, Math.round((parseGanttDate(existingPhase.end_date) - parseGanttDate(existingPhase.start_date)) / 86400000));
+            }
           }
           const newEnd = new Date(newStart); newEnd.setDate(newEnd.getDate() + durationDays);
           startDate = ymdString(newStart);
@@ -6810,6 +6937,7 @@
         : state.phases.filter(p => p.job_id === ganttJobId).length,
       linked_to:        linkedTo,
       link_offset_days: offsetDays,
+      is_milestone:     isMilestone,
     };
 
     const { error } = await sb.from('schedule_phases').upsert(payload, { onConflict: 'id' });
@@ -7208,6 +7336,7 @@
     pdf.line(chartX, y, chartX, y + chartH);
 
     // ======== PHASE ROWS ========
+    const pdfPositions = new Map();
     let rowY = y + HEADER_H;
     visible.forEach((p, idx) => {
       // Subtle zebra striping
@@ -7216,7 +7345,7 @@
         pdf.rect(MARGIN, rowY, chartW, ROW_H, 'F');
       }
 
-      // Tree cell — phase name with indent
+      // Tree cell — phase name with indent (chain glyph for linked phases)
       const indent = 2 + p._level * 3.5;
       const nameMaxW = TREE_W - indent - 3;
       const fontSize = p._level === 0 ? 9 : (p._level === 1 ? 8 : 7.5);
@@ -7233,14 +7362,38 @@
         pdf.line(chartX + i * colW, rowY, chartX + i * colW, rowY + ROW_H);
       }
 
-      // Bar
-      if (p.start_date && p.end_date) {
-        const s = parseGanttDate(p.start_date);
-        const e = parseGanttDate(p.end_date);
-        const startMm = dateToMm(s, months, colW);
-        const endMm   = dateToMm(new Date(e.getTime() + 86400000), months, colW);
-        const barX = chartX + Math.max(0, startMm);
-        const barEnd = chartX + Math.min(timelineW, endMm);
+      // Track bar/milestone bounds for the dependency-arrow pass
+      let leftMm = null, rightMm = null;
+      if (p.is_milestone && p.start_date) {
+        leftMm = rightMm = dateToMm(parseGanttDate(p.start_date), months, colW);
+      } else if (p.start_date && p.end_date) {
+        leftMm  = dateToMm(parseGanttDate(p.start_date), months, colW);
+        rightMm = dateToMm(new Date(parseGanttDate(p.end_date).getTime() + 86400000), months, colW);
+      }
+      pdfPositions.set(p.id, { rowCenterY: rowY + ROW_H / 2, leftMm, rightMm });
+
+      // Bar or milestone bullseye
+      if (p.is_milestone && p.start_date) {
+        const xMm = leftMm;
+        if (xMm != null && xMm >= 0 && xMm <= timelineW) {
+          const cx = chartX + xMm;
+          const cy = rowY + ROW_H / 2;
+          const rgb = hexToRgb(p.color || job.color);
+          pdf.setFillColor(rgb.r, rgb.g, rgb.b);
+          pdf.circle(cx, cy, 1.7, 'F');
+          pdf.setFillColor(255, 255, 255);
+          pdf.circle(cx, cy, 1.0, 'F');
+          pdf.setFillColor(rgb.r, rgb.g, rgb.b);
+          pdf.circle(cx, cy, 0.45, 'F');
+          // Milestone label to the right of the marker
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(7);
+          pdf.setTextColor(50, 55, 65);
+          pdf.text(p.name || '', cx + 2.6, cy + 0.6);
+        }
+      } else if (p.start_date && p.end_date) {
+        const barX = chartX + Math.max(0, leftMm);
+        const barEnd = chartX + Math.min(timelineW, rightMm);
         const barW = Math.max(0.6, barEnd - barX);
         const rgb = hexToRgb(p.color || job.color);
         pdf.setFillColor(rgb.r, rgb.g, rgb.b);
@@ -7253,6 +7406,27 @@
       pdf.line(MARGIN, rowY + ROW_H, pageW - MARGIN, rowY + ROW_H);
 
       rowY += ROW_H;
+    });
+
+    // ======== DEPENDENCY ARROWS ========
+    pdf.setDrawColor(110, 120, 140);
+    pdf.setLineWidth(0.25);
+    visible.forEach(p => {
+      if (!p.linked_to) return;
+      const succ = pdfPositions.get(p.id);
+      const pred = pdfPositions.get(p.linked_to);
+      if (!succ || !pred || pred.rightMm == null || succ.leftMm == null) return;
+      const sx = chartX + Math.max(0, Math.min(timelineW, pred.rightMm));
+      const sy = pred.rowCenterY;
+      const ex = chartX + Math.max(0, Math.min(timelineW, succ.leftMm));
+      const ey = succ.rowCenterY;
+      const elbowX = Math.max(sx + 1.5, ex - 1.5);
+      pdf.line(sx, sy, elbowX, sy);
+      pdf.line(elbowX, sy, elbowX, ey);
+      pdf.line(elbowX, ey, ex - 0.6, ey);
+      // Small chevron arrowhead just before the successor's left edge
+      pdf.line(ex - 1.4, ey - 0.6, ex - 0.4, ey);
+      pdf.line(ex - 1.4, ey + 0.6, ex - 0.4, ey);
     });
 
     // ======== TODAY LINE ========
@@ -7367,24 +7541,30 @@
   let barDrag = null;
   ganttContent.addEventListener('mousedown', e => {
     if (e.button !== 0) return;
-    const bar = e.target.closest('.g-bar');
+    const bar = e.target.closest('.g-bar, .g-milestone');
     if (!bar) return;
     const phaseId = bar.dataset.phaseId;
     const phase = state.phases.find(p => p.id === phaseId);
-    if (!phase || !phase.start_date || !phase.end_date) return;
+    if (!phase || !phase.start_date) return;
     if (!liveChartItems.length || !liveChartColW) return;
+    if (!phase.is_milestone && !phase.end_date) return;
 
-    const rect = bar.getBoundingClientRect();
-    const offsetInBar = e.clientX - rect.left;
-    const EDGE = Math.min(10, Math.max(4, rect.width / 4));
     let mode;
-    if (offsetInBar < EDGE)                       mode = 'resize-start';
-    else if (offsetInBar > rect.width - EDGE)     mode = 'resize-end';
-    else                                          mode = 'move';
-
-    // Linked phases have their start chained to the predecessor — only the
-    // end (duration) is freely draggable. Move/resize-start are no-ops here.
-    if (phase.linked_to && mode !== 'resize-end') return;
+    if (phase.is_milestone) {
+      // Milestones have no duration — drag always moves the marker.
+      mode = 'move';
+      if (phase.linked_to) return;  // chained, can't move freely
+    } else {
+      const rect = bar.getBoundingClientRect();
+      const offsetInBar = e.clientX - rect.left;
+      const EDGE = Math.min(10, Math.max(4, rect.width / 4));
+      if (offsetInBar < EDGE)                       mode = 'resize-start';
+      else if (offsetInBar > rect.width - EDGE)     mode = 'resize-end';
+      else                                          mode = 'move';
+      // Linked phases have their start chained to the predecessor — only the
+      // end (duration) is freely draggable. Move/resize-start are no-ops here.
+      if (phase.linked_to && mode !== 'resize-end') return;
+    }
 
     e.preventDefault();
     e.stopPropagation();
@@ -7396,7 +7576,7 @@
       mode,
       startX: e.clientX,
       origStart: parseGanttDate(phase.start_date),
-      origEnd:   parseGanttDate(phase.end_date),
+      origEnd:   parseGanttDate(phase.end_date || phase.start_date),
       colW:  liveChartColW,
       items: liveChartItems,
       moved: false,
