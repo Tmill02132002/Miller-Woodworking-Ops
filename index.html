@@ -29,6 +29,7 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
   :root {
     --bg-0: #0a0c0f;
@@ -3969,6 +3970,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Export PNG
       </button>
+      <button class="btn-ghost" id="gantt-export-pdf-btn" style="display:none;gap:6px;align-items:center;" title="Download as PDF">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export PDF
+      </button>
       <div class="gantt-zoom" id="gantt-zoom">
         <button class="gantt-zoom-btn active" data-gantt-months="12">1 Yr</button>
         <button class="gantt-zoom-btn" data-gantt-months="9">9 Mo</button>
@@ -6270,6 +6275,7 @@
   const ganttJobSelect  = document.getElementById('gantt-job-select');
   const ganttAddRootBtn = document.getElementById('gantt-add-root-phase');
   const ganttExportBtn  = document.getElementById('gantt-export-btn');
+  const ganttExportPdfBtn = document.getElementById('gantt-export-pdf-btn');
   const ganttContent    = document.getElementById('gantt-content');
   const ganttZoom       = document.getElementById('gantt-zoom');
 
@@ -6378,6 +6384,7 @@
       ganttContent.innerHTML = '<div class="gantt-empty-state">Select a job to view its schedule.</div>';
       ganttAddRootBtn.style.display = 'none';
       ganttExportBtn.style.display = 'none';
+      ganttExportPdfBtn.style.display = 'none';
       return;
     }
     const job = state.jobs.find(j => j.id === ganttJobId);
@@ -6385,7 +6392,9 @@
 
     const phases = state.phases.filter(p => p.job_id === ganttJobId);
     ganttAddRootBtn.style.display = 'flex';
-    ganttExportBtn.style.display = phases.length > 0 ? 'flex' : 'none';
+    const exportVisible = phases.length > 0 ? 'flex' : 'none';
+    ganttExportBtn.style.display = exportVisible;
+    ganttExportPdfBtn.style.display = exportVisible;
 
     if (phases.length === 0) {
       ganttContent.innerHTML = '<div class="gantt-empty-state">No phases yet.<div class="g-empty-hint">Click "+ Add Phase" to build the schedule for this job.</div></div>';
@@ -6653,25 +6662,23 @@
 
   ganttAddRootBtn.addEventListener('click', () => openPhaseModal(null, null));
 
-  // ---- Export to PNG ----
-  async function exportGanttPng() {
+  // ---- Export (shared canvas builder, PNG + PDF outputs) ----
+
+  // Builds an offscreen "print-style" canvas of the current job's Gantt and
+  // returns the canvas plus the job + date string for filename use.
+  async function buildExportCanvas() {
     if (!ganttJobId || !window.html2canvas) {
       if (!window.html2canvas) showError('Export unavailable', 'html2canvas library failed to load. Check your connection and reload.');
-      return;
+      return null;
     }
     const job = state.jobs.find(j => j.id === ganttJobId);
-    if (!job) return;
+    if (!job) return null;
 
     const original = ganttContent;
     const naturalW = original.scrollWidth;
     const naturalH = original.scrollHeight;
-    if (!naturalW || !naturalH) return;
+    if (!naturalW || !naturalH) return null;
 
-    ganttExportBtn.disabled = true;
-    const origLabel = ganttExportBtn.innerHTML;
-    ganttExportBtn.innerHTML = 'Exporting…';
-
-    // Build an offscreen render container at full natural size, with a header
     const stage = document.createElement('div');
     stage.style.cssText = `position:fixed;top:-20000px;left:0;width:${naturalW}px;background:#0a0c0f;font-family:'Inter',sans-serif;padding:0;z-index:-1;`;
 
@@ -6687,15 +6694,9 @@
     `;
 
     const clone = original.cloneNode(true);
-    // Strip sticky behavior so the clone lays out flat
-    clone.querySelectorAll('.g-tree, .g-header, .g-header .g-tree, .g-header .g-tl').forEach(el => {
-      el.style.position = 'static';
-    });
-    // Remove the today line from the export (it's a runtime overlay)
+    clone.querySelectorAll('.g-tree, .g-header, .g-header .g-tree, .g-header .g-tl').forEach(el => { el.style.position = 'static'; });
     clone.querySelectorAll('.g-today-line').forEach(el => el.remove());
-    // Remove hover-only row action buttons
     clone.querySelectorAll('.g-row-actions').forEach(el => el.remove());
-    // Hide expand-button visuals (decorative chevrons cause clutter in static export)
     clone.querySelectorAll('.g-expand-btn').forEach(el => { el.style.opacity = '0'; });
 
     stage.appendChild(header);
@@ -6711,21 +6712,58 @@
         width: naturalW,
         height: stage.scrollHeight,
       });
-      const safeName = (job.code || job.name || 'job').replace(/[^a-z0-9-_]+/gi, '_');
-      const link = document.createElement('a');
-      link.download = `${safeName}_schedule_${dateStr}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    } catch (e) {
-      showError('Export failed', e.message || String(e));
+      return { canvas, job, dateStr, cssWidth: naturalW, cssHeight: stage.scrollHeight };
     } finally {
       document.body.removeChild(stage);
-      ganttExportBtn.disabled = false;
-      ganttExportBtn.innerHTML = origLabel;
     }
   }
 
-  ganttExportBtn.addEventListener('click', exportGanttPng);
+  function exportSafeName(job) {
+    return (job.code || job.name || 'job').replace(/[^a-z0-9-_]+/gi, '_');
+  }
+
+  async function withExportButton(btn, fn) {
+    btn.disabled = true;
+    const orig = btn.innerHTML;
+    btn.innerHTML = 'Exporting…';
+    try { await fn(); }
+    catch (e) { showError('Export failed', e.message || String(e)); }
+    finally { btn.disabled = false; btn.innerHTML = orig; }
+  }
+
+  ganttExportBtn.addEventListener('click', () => withExportButton(ganttExportBtn, async () => {
+    const result = await buildExportCanvas();
+    if (!result) return;
+    const link = document.createElement('a');
+    link.download = `${exportSafeName(result.job)}_schedule_${result.dateStr}.png`;
+    link.href = result.canvas.toDataURL('image/png');
+    link.click();
+  }));
+
+  ganttExportPdfBtn.addEventListener('click', () => withExportButton(ganttExportPdfBtn, async () => {
+    const jspdfLib = window.jspdf || window.jsPDF;
+    if (!jspdfLib) { showError('Export unavailable', 'jsPDF library failed to load. Check your connection and reload.'); return; }
+    const jsPDFCtor = jspdfLib.jsPDF || jspdfLib;
+
+    const result = await buildExportCanvas();
+    if (!result) return;
+
+    // Page size matches the chart's CSS dimensions (96 DPI → mm) so the image
+    // fills the page edge-to-edge with no scaling artifacts. The user's print
+    // dialog can fit-to-paper if they want a standard size.
+    const mmPerPx = 25.4 / 96;
+    const pageW = result.cssWidth * mmPerPx;
+    const pageH = result.cssHeight * mmPerPx;
+
+    const pdf = new jsPDFCtor({
+      orientation: pageW > pageH ? 'landscape' : 'portrait',
+      unit: 'mm',
+      format: [pageW, pageH],
+      compress: true,
+    });
+    pdf.addImage(result.canvas.toDataURL('image/png'), 'PNG', 0, 0, pageW, pageH, undefined, 'FAST');
+    pdf.save(`${exportSafeName(result.job)}_schedule_${result.dateStr}.pdf`);
+  }));
 
   ganttZoom.addEventListener('click', e => {
     const btn = e.target.closest('.gantt-zoom-btn');
