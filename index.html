@@ -6837,7 +6837,13 @@
     pdf.setFont('helvetica');
 
     const today  = new Date(); today.setHours(0,0,0,0);
-    const dateLong  = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    // Manual ASCII-only formatters — toLocaleDateString can inject U+202F
+    // narrow no-break spaces and other glyphs that jsPDF's Helvetica can't render.
+    const MONTHS_LONG_PDF  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const MONTHS_SHORT_PDF = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const fmtLong  = d => `${MONTHS_LONG_PDF[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+    const fmtShort = d => `${MONTHS_SHORT_PDF[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+    const dateLong  = fmtLong(today);
     const dateShort = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 
     // ======== TITLE BLOCK ========
@@ -7008,7 +7014,6 @@
 
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(8);
-      const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       detailPhases.forEach(p => {
         const s = parseGanttDate(p.start_date);
         const e = parseGanttDate(p.end_date);
@@ -7026,7 +7031,7 @@
 
         pdf.setTextColor(110, 115, 125);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(`${fmt(s)}  →  ${fmt(e)}   (${days} day${days === 1 ? '' : 's'})`, pageW - MARGIN, dy, { align: 'right' });
+        pdf.text(`${fmtShort(s)}  to  ${fmtShort(e)}   (${days} day${days === 1 ? '' : 's'})`, pageW - MARGIN, dy, { align: 'right' });
         dy += DETAIL_ROW_H;
       });
     }
