@@ -3504,7 +3504,11 @@
     overflow: auto;
     height: calc(100vh - 118px);
     position: relative;
+    cursor: grab;
+    user-select: none;
   }
+  .gantt-wrap.grabbing,
+  .gantt-wrap.grabbing * { cursor: grabbing !important; }
   .gantt-content {
     position: relative;
     min-width: max-content;
@@ -6257,6 +6261,7 @@
 
   let ganttJobId    = null;
   let ganttScale    = 'month';
+  let lastGanttScrollJob = null;
   const collapsedPhases = new Set();
 
   const GANTT_COL_W = { month: 60, week: 52 };
@@ -6371,12 +6376,19 @@
     const tlEnd   = tl.tlEnd;
     const tlSpanMs = (tlEnd - tlStart) + 86400000;
 
-    // Stretch columns to fill the viewport when there's room
+    // Column width:
+    //  - month view: lock to 12 visible columns (drag to pan beyond)
+    //  - week view:  stretch to fill if items fit, otherwise use minColW
     const ganttWrap = document.getElementById('gantt-wrap');
     const availW = Math.max(0, (ganttWrap?.clientWidth || 1200) - 260 - 2);
-    let colW = minColW;
-    if (items.length > 0 && items.length * minColW < availW) {
-      colW = Math.floor(availW / items.length);
+    let colW;
+    if (ganttScale === 'month') {
+      colW = Math.max(minColW, Math.floor(availW / 12));
+    } else {
+      colW = minColW;
+      if (items.length > 0 && items.length * minColW < availW) {
+        colW = Math.floor(availW / items.length);
+      }
     }
     const totalW = items.length * colW;
 
@@ -6456,6 +6468,13 @@
       ${rowsHtml}
       ${todayLine}
     `;
+
+    // First time we render this job, auto-scroll so today is ~80px from the left
+    if (lastGanttScrollJob !== ganttJobId && showToday && ganttWrap) {
+      lastGanttScrollJob = ganttJobId;
+      const target = Math.max(0, todayPx - 80);
+      ganttWrap.scrollLeft = target;
+    }
   }
 
   // ---- Phase modal ----
@@ -6612,6 +6631,52 @@
     clearTimeout(ganttResizeTimer);
     ganttResizeTimer = setTimeout(renderSchedule, 120);
   });
+
+  // ---- Click-and-drag pan for the Gantt timeline ----
+  const ganttWrapEl = document.getElementById('gantt-wrap');
+  let ganttDrag = null;
+  let suppressGanttClick = false;
+
+  ganttWrapEl.addEventListener('mousedown', e => {
+    if (e.button !== 0) return; // left button only
+    // Don't start a drag if the user is clicking an interactive control
+    if (e.target.closest('button, [data-action], input, select, .g-bar')) return;
+    ganttDrag = {
+      startX: e.pageX,
+      startY: e.pageY,
+      startScrollLeft: ganttWrapEl.scrollLeft,
+      startScrollTop:  ganttWrapEl.scrollTop,
+      moved: false,
+    };
+    ganttWrapEl.classList.add('grabbing');
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (!ganttDrag) return;
+    const dx = e.pageX - ganttDrag.startX;
+    const dy = e.pageY - ganttDrag.startY;
+    if (!ganttDrag.moved && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
+      ganttDrag.moved = true;
+      suppressGanttClick = true;
+    }
+    ganttWrapEl.scrollLeft = ganttDrag.startScrollLeft - dx;
+    ganttWrapEl.scrollTop  = ganttDrag.startScrollTop  - dy;
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!ganttDrag) return;
+    ganttDrag = null;
+    ganttWrapEl.classList.remove('grabbing');
+  });
+
+  // Swallow the click that follows a drag so it doesn't open the phase modal
+  ganttWrapEl.addEventListener('click', e => {
+    if (suppressGanttClick) {
+      suppressGanttClick = false;
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
 
 
   // ========= INIT =========
