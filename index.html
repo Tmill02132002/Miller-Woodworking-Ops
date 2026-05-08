@@ -84,21 +84,6 @@
     padding-right: 22px !important;
   }
 
-  /* subtle grid background */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(var(--line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--line) 1px, transparent 1px);
-    background-size: 48px 48px;
-    opacity: 0.25;
-    pointer-events: none;
-    z-index: 0;
-    mask-image: radial-gradient(ellipse at 50% 40%, black 30%, transparent 80%);
-  }
-
   body::after {
     content: '';
     position: fixed;
