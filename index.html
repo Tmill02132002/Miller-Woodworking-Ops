@@ -6704,7 +6704,7 @@
     document.body.appendChild(stage);
 
     try {
-      const canvas = await window.html2canvas(stage, {
+      const fullCanvas = await window.html2canvas(stage, {
         backgroundColor: '#0a0c0f',
         scale: 2,
         useCORS: true,
@@ -6712,7 +6712,43 @@
         width: naturalW,
         height: stage.scrollHeight,
       });
-      return { canvas, job, dateStr, cssWidth: naturalW, cssHeight: stage.scrollHeight };
+
+      // Crop to tree column + only the months currently visible at the user's
+      // selected zoom + scroll position. Without this, every export captures
+      // the full underlying timeline regardless of what's on screen.
+      const win = computeExportWindow();
+      if (!win) {
+        return { canvas: fullCanvas, job, dateStr, cssWidth: naturalW, cssHeight: stage.scrollHeight };
+      }
+      const SCALE   = 2;
+      const TREE_PX = 260;
+      const winTimelineCss = win.count * win.colW;
+      const finalCssW = TREE_PX + winTimelineCss;
+
+      const out = document.createElement('canvas');
+      out.width  = Math.round(finalCssW * SCALE);
+      out.height = fullCanvas.height;
+      const ctx  = out.getContext('2d');
+      ctx.fillStyle = '#0a0c0f';
+      ctx.fillRect(0, 0, out.width, out.height);
+
+      // Tree column (frozen left in the live view, kept verbatim here)
+      ctx.drawImage(
+        fullCanvas,
+        0, 0, TREE_PX * SCALE, fullCanvas.height,
+        0, 0, TREE_PX * SCALE, fullCanvas.height
+      );
+      // Visible timeline slice
+      if (winTimelineCss > 0) {
+        const srcX = (TREE_PX + win.firstIdx * win.colW) * SCALE;
+        ctx.drawImage(
+          fullCanvas,
+          srcX, 0, winTimelineCss * SCALE, fullCanvas.height,
+          TREE_PX * SCALE, 0, winTimelineCss * SCALE, fullCanvas.height
+        );
+      }
+
+      return { canvas: out, job, dateStr, cssWidth: finalCssW, cssHeight: stage.scrollHeight };
     } finally {
       document.body.removeChild(stage);
     }
@@ -6782,19 +6818,45 @@
     return diff * colW + ((date.getDate() - 1) / dim) * colW;
   }
 
+  // Determines which slice of months the user is currently looking at, based on
+  // the live zoom toggle (ganttVisibleMonths) and horizontal scroll position.
+  // Used by both PDF and PNG exports so they mirror the on-screen view.
+  function computeExportWindow() {
+    if (!ganttJobId) return null;
+    const job = state.jobs.find(j => j.id === ganttJobId);
+    if (!job) return null;
+    const phases = state.phases.filter(p => p.job_id === ganttJobId);
+    if (!phases.length) return null;
+
+    const tl = buildMonthTimeline(phases);
+    const allMonths = tl.months;
+
+    const wrap = document.getElementById('gantt-wrap');
+    const availW = Math.max(0, (wrap?.clientWidth || 1200) - 260 - 2);
+    const colW = Math.max(GANTT_MIN_COL_W, Math.floor(availW / ganttVisibleMonths));
+
+    const scrollLeft = wrap?.scrollLeft || 0;
+    let firstIdx = Math.max(0, Math.round(scrollLeft / colW));
+    const maxFirstIdx = Math.max(0, allMonths.length - ganttVisibleMonths);
+    firstIdx = Math.min(firstIdx, maxFirstIdx);
+    const count = Math.min(ganttVisibleMonths, allMonths.length - firstIdx);
+
+    return {
+      job, phases, allMonths, colW, firstIdx, count,
+      months: allMonths.slice(firstIdx, firstIdx + count),
+    };
+  }
+
   ganttExportPdfBtn.addEventListener('click', () => withExportButton(ganttExportPdfBtn, async () => {
     const jspdfLib = window.jspdf || window.jsPDF;
     if (!jspdfLib) { showError('Export unavailable', 'jsPDF library failed to load. Check your connection and reload.'); return; }
     const jsPDFCtor = jspdfLib.jsPDF || jspdfLib;
 
-    if (!ganttJobId) return;
-    const job = state.jobs.find(j => j.id === ganttJobId);
-    if (!job) return;
-    const phases = state.phases.filter(p => p.job_id === ganttJobId);
-    if (!phases.length) return;
-
-    const tl       = buildMonthTimeline(phases);
-    const months   = tl.months;
+    const win = computeExportWindow();
+    if (!win) return;
+    const job      = win.job;
+    const phases   = win.phases;
+    const months   = win.months;          // windowed — only what's currently visible
     const visible  = buildVisiblePhases(phases, null, 0, []);
 
     // Layout constants (mm) — tuned for clean, professional output.
@@ -6809,11 +6871,11 @@
     const DETAIL_GAP   = 6;
     const DETAIL_ROW_H = 4.4;
 
-    // Pick a column width that aims at ≤ A3-landscape width; let the page grow
-    // wider only if there are many months that won't fit at minColW.
+    // Page targets A3 landscape; columns get wider when fewer months are shown
+    // so the chart still fills the page nicely at every zoom level.
     const TARGET_PAGE_W = 420;
-    const minColW = 9, maxColW = 26;
-    let colW = (TARGET_PAGE_W - 2*MARGIN - TREE_W) / months.length;
+    const minColW = 9, maxColW = 50;
+    let colW = (TARGET_PAGE_W - 2*MARGIN - TREE_W) / Math.max(1, months.length);
     colW = Math.max(minColW, Math.min(maxColW, colW));
     const timelineW = months.length * colW;
     const chartW    = TREE_W + timelineW;
@@ -6986,7 +7048,9 @@
     });
 
     // ======== TODAY LINE ========
-    if (today >= tl.tlStart && today <= tl.tlEnd) {
+    const winTlStart = months[0];
+    const winTlEnd   = new Date(months[months.length-1].getFullYear(), months[months.length-1].getMonth() + 1, 0);
+    if (today >= winTlStart && today <= winTlEnd) {
       const todayMm = dateToMm(today, months, colW);
       pdf.setDrawColor(220, 50, 65);
       pdf.setLineWidth(0.5);
