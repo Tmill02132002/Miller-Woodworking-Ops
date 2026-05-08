@@ -6740,6 +6740,29 @@
     link.click();
   }));
 
+  // PDF-friendly version of the Miller mark — explicit dark strokes/text
+  // (the in-app logo uses currentColor which is light gray on the dark theme).
+  const PDF_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 120" preserveAspectRatio="xMidYMid meet"><g transform="translate(130, 30)"><line x1="0" y1="-30" x2="0" y2="30" stroke="#1a1f2a" stroke-width="2.5"/><line x1="-30" y1="0" x2="30" y2="0" stroke="#1a1f2a" stroke-width="2.5"/><g fill="none" stroke="#e63946" stroke-width="6"><path d="M -14.5 -4 A 15 15 0 0 1 -4 -14.5"/><path d="M 4 -14.5 A 15 15 0 0 1 14.5 -4"/><path d="M 14.5 4 A 15 15 0 0 1 4 14.5"/><path d="M -4 14.5 A 15 15 0 0 1 -14.5 4"/></g><circle cx="0" cy="0" r="3.5" fill="#e63946"/></g><text x="130" y="100" text-anchor="middle" font-family="Impact, 'Arial Black', sans-serif" font-weight="700" font-size="44" letter-spacing="4" fill="#1a1f2a">MILLER</text></svg>`;
+
+  // Render an SVG string into a PNG data URL via a temporary <img>+canvas.
+  function svgToPngDataUrl(svg, w, h) {
+    return new Promise((resolve, reject) => {
+      const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+      const url  = URL.createObjectURL(blob);
+      const img  = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('SVG render failed')); };
+      img.src = url;
+    });
+  }
+
   // Hex → {r,g,b}; falls back to neutral gray if input is malformed.
   function hexToRgb(hex) {
     const s = (hex || '').replace('#', '').slice(0, 6);
@@ -6776,7 +6799,9 @@
 
     // Layout constants (mm) — tuned for clean, professional output.
     const MARGIN       = 12;
-    const TITLE_H      = 28;
+    const TITLE_H      = 32;
+    const LOGO_W       = 28;
+    const LOGO_H       = 13;
     const TREE_W       = 58;
     const ROW_H        = 7;
     const HEADER_H     = 13;
@@ -6817,25 +6842,38 @@
 
     // ======== TITLE BLOCK ========
     let y = MARGIN;
+
+    // Miller logo, top-left. Render at ~300 DPI for a crisp embed.
+    let logoData = null;
+    try {
+      logoData = await svgToPngDataUrl(PDF_LOGO_SVG, Math.round(LOGO_W * 12), Math.round(LOGO_H * 12));
+    } catch (_) { /* logo failed to render — proceed without */ }
+    if (logoData) {
+      pdf.addImage(logoData, 'PNG', MARGIN, y, LOGO_W, LOGO_H, undefined, 'FAST');
+    }
+
+    // Generated date at top-right
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(8);
     pdf.setTextColor(130, 135, 145);
-    pdf.text('MILLER WOODWORKING · OPERATIONS COMMAND', MARGIN, y + 4);
-    pdf.text(`Generated ${dateLong}`, pageW - MARGIN, y + 4, { align: 'right' });
+    pdf.text(`Generated ${dateLong}`, pageW - MARGIN, y + 5, { align: 'right' });
 
+    // Job name (below logo)
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(20);
+    pdf.setFontSize(18);
     pdf.setTextColor(20, 25, 35);
-    pdf.text(job.name || '—', MARGIN, y + 15);
+    pdf.text(job.name || '—', MARGIN, y + LOGO_H + 7);
 
+    // Job meta (below name)
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(10);
-    pdf.setTextColor(85, 90, 100);
+    pdf.setFontSize(9.5);
+    pdf.setTextColor(95, 100, 110);
     const metaParts = [];
     if (job.code)   metaParts.push(job.code);
     if (job.client) metaParts.push(job.client);
-    pdf.text(metaParts.join('   ·   ') || '—', MARGIN, y + 22);
+    pdf.text(metaParts.join('   ·   ') || '—', MARGIN, y + LOGO_H + 13);
 
+    // Bottom rule
     pdf.setDrawColor(200, 205, 215);
     pdf.setLineWidth(0.3);
     pdf.line(MARGIN, y + TITLE_H - 2, pageW - MARGIN, y + TITLE_H - 2);
