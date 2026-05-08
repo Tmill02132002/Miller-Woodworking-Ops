@@ -3444,6 +3444,278 @@
   .error-banner-title { font-size: 12px; }
   .error-banner-msg { font-size: 11px; }
 }
+
+  /* ============ SCHEDULE / GANTT ============ */
+  .gantt-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 28px;
+    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+    background: var(--bg-1);
+  }
+  .gantt-job-select {
+    background: var(--bg-2);
+    color: var(--ink-0);
+    border: 1px solid var(--line-bright);
+    border-radius: var(--r-md);
+    padding: 7px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    min-width: 220px;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 14px;
+    padding-right: 28px;
+  }
+  .gantt-job-select:focus { outline: none; border-color: var(--blue); }
+  .gantt-zoom {
+    display: flex;
+    gap: 3px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 3px;
+    margin-left: auto;
+  }
+  .gantt-zoom-btn {
+    background: transparent;
+    color: var(--ink-2);
+    border: none;
+    padding: 5px 14px;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+  .gantt-zoom-btn:hover { color: var(--ink-0); }
+  .gantt-zoom-btn.active { background: var(--bg-3); color: var(--ink-0); box-shadow: 0 1px 3px rgba(0,0,0,0.35); }
+
+  /* Main scrollable wrapper */
+  .gantt-wrap {
+    overflow: auto;
+    height: calc(100vh - 118px);
+    position: relative;
+  }
+  .gantt-content {
+    position: relative;
+    min-width: max-content;
+  }
+  /* Every gantt row is a flex pair: tree cell + timeline cell */
+  .g-row {
+    display: flex;
+    border-bottom: 1px solid var(--line);
+    min-height: 36px;
+  }
+  /* Left tree cell — sticky left so it doesn't scroll horizontally */
+  .g-tree {
+    width: 260px;
+    min-width: 260px;
+    flex-shrink: 0;
+    position: sticky;
+    left: 0;
+    background: var(--bg-1);
+    border-right: 1px solid var(--line-bright);
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+  }
+  /* Right timeline cell */
+  .g-tl {
+    flex: 1;
+    position: relative;
+    min-height: 36px;
+  }
+  /* Sticky header row */
+  .g-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 2px solid var(--line-bright);
+  }
+  .g-header .g-tree {
+    background: var(--bg-2);
+    z-index: 11;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    padding-left: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding-bottom: 5px;
+    gap: 0;
+  }
+  .g-header .g-tl { background: var(--bg-2); }
+  /* Year sub-row */
+  .g-year-row { height: 22px; display: flex; border-bottom: 1px solid var(--line); }
+  .g-year-cell {
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--ink-1);
+    padding: 4px 8px;
+    border-right: 1px solid var(--line);
+    background: var(--bg-2);
+  }
+  /* Month sub-row */
+  .g-month-row { height: 22px; display: flex; }
+  .g-month-cell {
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--ink-2);
+    border-right: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    background: var(--bg-2);
+  }
+  .g-month-cell.is-today-month { color: var(--red); background: rgba(230,57,70,0.07); }
+  /* Phase row hover */
+  .g-row:not(.g-header):hover .g-tree { background: var(--bg-2); }
+  .g-row:not(.g-header):hover .g-tl { background: rgba(255,255,255,0.015); }
+  /* Column grid lines inside timeline cell */
+  .g-col-lines { position: absolute; inset: 0; display: flex; pointer-events: none; }
+  .g-col-line { flex-shrink: 0; height: 100%; border-right: 1px solid rgba(37,44,56,0.55); }
+  .g-col-line.is-today-month { background: rgba(230,57,70,0.04); }
+  /* Gantt bar */
+  .g-bar {
+    position: absolute;
+    top: 7px;
+    height: 22px;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    padding: 0 7px;
+    font-size: 10px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    color: rgba(255,255,255,0.92);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    opacity: 0.88;
+    transition: opacity 0.12s;
+    min-width: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.45);
+  }
+  .g-bar:hover { opacity: 1; }
+  /* Today vertical line spanning full gantt height */
+  .g-today-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--red);
+    opacity: 0.55;
+    pointer-events: none;
+    z-index: 2;
+  }
+  /* Tree cell internals */
+  .g-tree-indent { display: flex; align-items: center; flex: 1; overflow: hidden; }
+  .g-expand-btn {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ink-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--r-xs);
+    transition: transform 0.15s;
+    padding: 0;
+  }
+  .g-expand-btn svg { width: 10px; height: 10px; pointer-events: none; }
+  .g-expand-btn.expanded { transform: rotate(90deg); }
+  .g-expand-btn.leaf { opacity: 0; pointer-events: none; }
+  .g-phase-name {
+    flex: 1;
+    font-size: 12px;
+    color: var(--ink-1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .g-phase-name.lvl-0 { font-weight: 600; color: var(--ink-0); }
+  .g-phase-name.lvl-2 { color: var(--ink-2); font-size: 11px; }
+  .g-row-actions {
+    display: flex;
+    gap: 1px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.12s;
+    padding-right: 4px;
+  }
+  .g-row:hover .g-row-actions { opacity: 1; }
+  .g-act-btn {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    border-radius: var(--r-xs);
+    cursor: pointer;
+    color: var(--ink-3);
+    transition: all 0.1s;
+    flex-shrink: 0;
+  }
+  .g-act-btn svg { width: 11px; height: 11px; pointer-events: none; }
+  .g-act-btn:hover { background: var(--bg-3); color: var(--ink-0); }
+  .g-act-btn.danger:hover { color: var(--red); }
+  /* Empty states */
+  .gantt-empty-state {
+    padding: 60px 28px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--ink-3);
+    text-transform: uppercase;
+  }
+  .gantt-empty-state .g-empty-hint {
+    margin-top: 10px;
+    font-size: 10px;
+    color: var(--ink-3);
+    text-transform: none;
+  }
+  /* Phase modal */
+  #modal-phase .modal { max-width: 420px; }
+  .phase-date-row { display: flex; gap: 12px; }
+  .phase-date-row .field { flex: 1; }
+  .phase-color-row { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+  .phase-color-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: border-color 0.12s, transform 0.12s;
+    flex-shrink: 0;
+  }
+  .phase-color-swatch:hover { transform: scale(1.15); }
+  .phase-color-swatch.sel { border-color: var(--ink-0); transform: scale(1.1); }
 </style>
 </head>
 <body>
@@ -3500,6 +3772,10 @@
     <button class="view-tab" data-view="calendar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       Calendar
+    </button>
+    <button class="view-tab" data-view="schedule">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="8" height="3" rx="1"/><rect x="7" y="10" width="11" height="3" rx="1"/><rect x="4" y="16" width="9" height="3" rx="1"/><line x1="3" y1="3" x2="3" y2="21"/></svg>
+      Schedule
     </button>
     <div class="status-item compact"><span class="dot red"></span><span id="overdue-flag">0</span> Overdue</div>
   </nav>
@@ -3669,8 +3945,63 @@
 
   </div><!-- /calendar view panel -->
 
+  <!-- =========================== SCHEDULE / GANTT VIEW =========================== -->
+  <div class="view-panel" data-view-panel="schedule">
+    <section class="gantt-controls">
+      <select class="gantt-job-select" id="gantt-job-select">
+        <option value="">— Select a Job —</option>
+      </select>
+      <button class="btn-primary" id="gantt-add-root-phase" style="display:none;gap:6px;align-items:center;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Phase
+      </button>
+      <div class="gantt-zoom" id="gantt-zoom">
+        <button class="gantt-zoom-btn active" data-gantt-scale="month">Month</button>
+        <button class="gantt-zoom-btn" data-gantt-scale="week">Week</button>
+      </div>
+    </section>
+    <div class="gantt-wrap" id="gantt-wrap">
+      <div class="gantt-content" id="gantt-content">
+        <div class="gantt-empty-state">Select a job to view its schedule.</div>
+      </div>
+    </div>
+  </div><!-- /schedule view panel -->
+
   <div class="footer-tag">// END OF FEED · MILLER WOODWORKING CO. · EST. 1986</div>
 </main>
+
+<!-- Phase Edit Modal -->
+<div class="modal-backdrop" id="modal-phase" style="display:none;">
+  <div class="modal">
+    <h3 id="modal-phase-title">New Phase</h3>
+    <div class="modal-sub" id="modal-phase-sub">// Add schedule phase</div>
+    <div class="field">
+      <label>Phase Name</label>
+      <input type="text" id="phase-name-input" placeholder="e.g. Cabinet Build, Finishing, Site Install" maxlength="80" />
+    </div>
+    <div class="phase-date-row">
+      <div class="field">
+        <label>Start Date</label>
+        <input type="date" id="phase-start-input" />
+      </div>
+      <div class="field">
+        <label>End Date</label>
+        <input type="date" id="phase-end-input" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Color</label>
+      <div class="phase-color-row" id="phase-color-picker"></div>
+    </div>
+    <div class="modal-actions modal-actions-split">
+      <button class="btn-danger" id="phase-delete-btn" style="display:none;">Delete</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-ghost" id="phase-cancel-btn">Cancel</button>
+        <button class="btn-primary" id="phase-save-btn">Save Phase</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- New Job Modal -->
 <div class="modal-backdrop" id="modal-job">
@@ -3907,7 +4238,7 @@
  
  
   // ========= STATE =========
-  let state = { jobs: [] };
+  let state = { jobs: [], phases: [] };
   let currentFilter = 'all';
   let jobCounter = 0;
  
@@ -4034,6 +4365,24 @@
         })),
       }));
       jobCounter = state.jobs.length;
+
+      // Load schedule phases separately so a missing table doesn't break the dashboard
+      try {
+        const phasesResp = await sb.from('schedule_phases').select('*').order('sort_order');
+        if (!phasesResp.error) {
+          state.phases = (phasesResp.data || []).map(p => ({
+            id: p.id,
+            job_id: p.job_id,
+            parent_id: p.parent_id || null,
+            name: p.name,
+            start_date: p.start_date || null,
+            end_date: p.end_date || null,
+            color: p.color || null,
+            sort_order: p.sort_order || 0,
+          }));
+        }
+      } catch (_) { state.phases = []; }
+
       setSyncStatus('synced', `Synced · ${state.jobs.length} jobs`);
       hideError();
       console.log('[load] done, ' + state.jobs.length + ' jobs');
@@ -5288,6 +5637,7 @@
     currentView = target;
  
     if (target === 'calendar') renderCalendar();
+    if (target === 'schedule') renderSchedule();
   });
  
  
@@ -5896,6 +6246,356 @@
       e.preventDefault();
       e.target.blur();
     }
+  });
+
+
+  // ========= SCHEDULE / GANTT =========
+  const ganttJobSelect  = document.getElementById('gantt-job-select');
+  const ganttAddRootBtn = document.getElementById('gantt-add-root-phase');
+  const ganttContent    = document.getElementById('gantt-content');
+  const ganttZoom       = document.getElementById('gantt-zoom');
+
+  let ganttJobId    = null;
+  let ganttScale    = 'month';
+  const collapsedPhases = new Set();
+
+  const GANTT_COL_W = { month: 60, week: 52 };
+
+  function parseGanttDate(str) {
+    if (!str) return null;
+    const [y, m, d] = str.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function buildMonthTimeline(phases) {
+    const today = new Date(); today.setHours(0,0,0,0);
+    let tlStart = new Date(today.getFullYear(), today.getMonth() - 2, 1);
+    let tlEnd   = new Date(today.getFullYear(), today.getMonth() + 14, 0);
+    phases.forEach(p => {
+      if (p.start_date) {
+        const d = parseGanttDate(p.start_date);
+        const ms = new Date(d.getFullYear(), d.getMonth(), 1);
+        if (ms < tlStart) tlStart = ms;
+      }
+      if (p.end_date) {
+        const d = parseGanttDate(p.end_date);
+        const me = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+        if (me > tlEnd) tlEnd = me;
+      }
+    });
+    tlStart = new Date(tlStart.getFullYear(), tlStart.getMonth() - 1, 1);
+    tlEnd   = new Date(tlEnd.getFullYear(),   tlEnd.getMonth()   + 2, 0);
+    const months = [];
+    let cur = new Date(tlStart.getFullYear(), tlStart.getMonth(), 1);
+    while (cur <= tlEnd) { months.push(new Date(cur)); cur.setMonth(cur.getMonth() + 1); }
+    return { tlStart, tlEnd, months };
+  }
+
+  function buildWeekTimeline(phases) {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const dow = today.getDay();
+    let tlStart = new Date(today); tlStart.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1) - 14);
+    let tlEnd   = new Date(today); tlEnd.setDate(today.getDate() + 84);
+    phases.forEach(p => {
+      if (p.start_date) { const d = parseGanttDate(p.start_date); if (d < tlStart) tlStart = new Date(d); }
+      if (p.end_date)   { const d = parseGanttDate(p.end_date);   if (d > tlEnd)   tlEnd   = new Date(d); }
+    });
+    const ds = tlStart.getDay();
+    tlStart.setDate(tlStart.getDate() - (ds === 0 ? 6 : ds - 1) - 7);
+    tlEnd.setDate(tlEnd.getDate() + 14);
+    const weeks = [];
+    let wc = new Date(tlStart);
+    while (wc <= tlEnd) { weeks.push(new Date(wc)); wc.setDate(wc.getDate() + 7); }
+    return { tlStart, tlEnd, weeks };
+  }
+
+  function dateToPx(date, tlStart, tlSpanMs, totalW) {
+    return Math.round((date - tlStart) / tlSpanMs * totalW);
+  }
+
+  function buildVisiblePhases(phases, parentId, level, out) {
+    phases
+      .filter(p => p.parent_id === parentId)
+      .sort((a, b) => (a.sort_order - b.sort_order) || a.id.localeCompare(b.id))
+      .forEach(p => {
+        out.push({ ...p, _level: level });
+        if (!collapsedPhases.has(p.id)) buildVisiblePhases(phases, p.id, level + 1, out);
+      });
+    return out;
+  }
+
+  function ganttYearGroups(items, colW) {
+    const groups = [];
+    items.forEach(item => {
+      const yr = item.getFullYear();
+      if (!groups.length || groups[groups.length-1].year !== yr) groups.push({ year: yr, count: 0 });
+      groups[groups.length-1].count++;
+    });
+    return groups.map(g => `<div class="g-year-cell" style="width:${g.count * colW}px;">${g.year}</div>`).join('');
+  }
+
+  function renderSchedule() {
+    // Populate job dropdown
+    ganttJobSelect.innerHTML = '<option value="">— Select a Job —</option>';
+    state.jobs.forEach(j => {
+      const o = document.createElement('option');
+      o.value = j.id;
+      o.textContent = (j.code ? j.code + ' · ' : '') + j.name;
+      ganttJobSelect.appendChild(o);
+    });
+    if (ganttJobId) ganttJobSelect.value = ganttJobId;
+
+    if (!ganttJobId) {
+      ganttContent.innerHTML = '<div class="gantt-empty-state">Select a job to view its schedule.</div>';
+      ganttAddRootBtn.style.display = 'none';
+      return;
+    }
+    const job = state.jobs.find(j => j.id === ganttJobId);
+    if (!job) return;
+
+    const phases = state.phases.filter(p => p.job_id === ganttJobId);
+    ganttAddRootBtn.style.display = 'flex';
+
+    if (phases.length === 0) {
+      ganttContent.innerHTML = '<div class="gantt-empty-state">No phases yet.<div class="g-empty-hint">Click "+ Add Phase" to build the schedule for this job.</div></div>';
+      return;
+    }
+
+    const colW = GANTT_COL_W[ganttScale] || 60;
+    const today = new Date(); today.setHours(0,0,0,0);
+    let headerHtml, totalW, tlStart, tlEnd, tlSpanMs, colCellsHtml = '';
+
+    if (ganttScale === 'week') {
+      const tl = buildWeekTimeline(phases);
+      tlStart = tl.tlStart; tlEnd = tl.tlEnd;
+      totalW = tl.weeks.length * colW;
+      tlSpanMs = (tlEnd - tlStart) + 86400000;
+      const yearHtml = ganttYearGroups(tl.weeks, colW);
+      const weekHtml = tl.weeks.map(w => {
+        const isNow = w <= today && today < new Date(w.getTime() + 7*86400000);
+        const lbl = (w.getMonth()+1) + '/' + w.getDate();
+        colCellsHtml += `<div class="g-col-line${isNow ? ' is-today-month' : ''}" style="width:${colW}px;"></div>`;
+        return `<div class="g-month-cell${isNow ? ' is-today-month' : ''}" style="width:${colW}px;">${lbl}</div>`;
+      }).join('');
+      headerHtml = `<div class="g-year-row">${yearHtml}</div><div class="g-month-row">${weekHtml}</div>`;
+    } else {
+      const tl = buildMonthTimeline(phases);
+      tlStart = tl.tlStart; tlEnd = tl.tlEnd;
+      totalW = tl.months.length * colW;
+      tlSpanMs = (tlEnd - tlStart) + 86400000;
+      const yearHtml = ganttYearGroups(tl.months, colW);
+      const monthHtml = tl.months.map(m => {
+        const isNow = m.getFullYear() === today.getFullYear() && m.getMonth() === today.getMonth();
+        colCellsHtml += `<div class="g-col-line${isNow ? ' is-today-month' : ''}" style="width:${colW}px;"></div>`;
+        return `<div class="g-month-cell${isNow ? ' is-today-month' : ''}" style="width:${colW}px;">${MONTH_SHORT[m.getMonth()]}</div>`;
+      }).join('');
+      headerHtml = `<div class="g-year-row">${yearHtml}</div><div class="g-month-row">${monthHtml}</div>`;
+    }
+
+    const todayPx   = dateToPx(today, tlStart, tlSpanMs, totalW);
+    const showToday  = today >= tlStart && today <= tlEnd;
+    const todayLine  = showToday ? `<div class="g-today-line" style="left:${260 + todayPx}px;top:44px;"></div>` : '';
+
+    const expandSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>`;
+    const addSvg    = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+    const editSvg   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+    const delSvg    = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
+
+    const visible = buildVisiblePhases(phases, null, 0, []);
+    const rowsHtml = visible.map(p => {
+      const hasChildren = phases.some(x => x.parent_id === p.id);
+      const color  = p.color || job.color;
+      const lvl    = Math.min(p._level, 2);
+      const indent = 8 + p._level * 20;
+      const expandCls = hasChildren ? (collapsedPhases.has(p.id) ? '' : ' expanded') : ' leaf';
+
+      const treeCell = `<div class="g-tree">
+        <div class="g-tree-indent" style="padding-left:${indent}px;">
+          <button class="g-expand-btn${expandCls}" data-action="expand" data-phase-id="${p.id}">${expandSvg}</button>
+          <span class="g-phase-name lvl-${lvl}" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</span>
+        </div>
+        <div class="g-row-actions">
+          <button class="g-act-btn" data-action="add-child" data-phase-id="${p.id}" title="Add sub-phase">${addSvg}</button>
+          <button class="g-act-btn" data-action="edit-phase" data-phase-id="${p.id}" title="Edit">${editSvg}</button>
+          <button class="g-act-btn danger" data-action="delete-phase" data-phase-id="${p.id}" title="Delete">${delSvg}</button>
+        </div>
+      </div>`;
+
+      let barHtml = '';
+      if (p.start_date && p.end_date) {
+        const s = parseGanttDate(p.start_date);
+        const e = parseGanttDate(p.end_date);
+        const barL = Math.max(0, dateToPx(s, tlStart, tlSpanMs, totalW));
+        const barR = Math.min(totalW, dateToPx(new Date(e.getTime() + 86400000), tlStart, tlSpanMs, totalW));
+        const barW = Math.max(4, barR - barL);
+        const lbl  = barW > 50 ? escapeHtml(p.name) : '';
+        barHtml = `<div class="g-bar" style="left:${barL}px;width:${barW}px;background:${color};" data-action="edit-phase" data-phase-id="${p.id}">${lbl}</div>`;
+      }
+
+      return `<div class="g-row" data-phase-id="${p.id}">
+        ${treeCell}
+        <div class="g-tl" style="width:${totalW}px;">
+          <div class="g-col-lines">${colCellsHtml}</div>
+          ${barHtml}
+        </div>
+      </div>`;
+    }).join('');
+
+    ganttContent.innerHTML = `
+      <div class="g-row g-header">
+        <div class="g-tree">// PHASE</div>
+        <div class="g-tl" style="width:${totalW}px;">${headerHtml}</div>
+      </div>
+      ${rowsHtml}
+      ${todayLine}
+    `;
+  }
+
+  // ---- Phase modal ----
+  const modalPhase      = document.getElementById('modal-phase');
+  const phaseNameInput  = document.getElementById('phase-name-input');
+  const phaseStartInput = document.getElementById('phase-start-input');
+  const phaseEndInput   = document.getElementById('phase-end-input');
+  const phaseColorPick  = document.getElementById('phase-color-picker');
+  const phaseDeleteBtn  = document.getElementById('phase-delete-btn');
+  const phaseCancelBtn  = document.getElementById('phase-cancel-btn');
+  const phaseSaveBtn    = document.getElementById('phase-save-btn');
+  const phaseModalTitle = document.getElementById('modal-phase-title');
+  const phaseModalSub   = document.getElementById('modal-phase-sub');
+
+  let editingPhaseId     = null;
+  let editingPhaseParent = null;
+  let selectedPhaseColor = null;
+
+  const PHASE_PALETTE = [
+    '#d97706','#0891b2','#16a34a','#8b5cf6',
+    '#db2777','#0284c7','#ca8a04','#059669',
+    '#c026d3','#2563eb','#65a30d','#e11d48',
+    '#f97316','#14b8a6','#6366f1','#84cc16',
+  ];
+
+  function openPhaseModal(phaseId, parentId) {
+    editingPhaseId     = phaseId || null;
+    editingPhaseParent = parentId || null;
+    const ex = phaseId ? state.phases.find(p => p.id === phaseId) : null;
+    phaseModalTitle.textContent = ex ? 'Edit Phase' : 'New Phase';
+    phaseModalSub.textContent   = ex ? '// Update schedule phase' : '// Add schedule phase';
+    phaseNameInput.value  = ex ? ex.name : '';
+    phaseStartInput.value = ex ? (ex.start_date || '') : '';
+    phaseEndInput.value   = ex ? (ex.end_date   || '') : '';
+    selectedPhaseColor    = ex ? ex.color : null;
+    phaseDeleteBtn.style.display = ex ? 'inline-flex' : 'none';
+
+    const job = state.jobs.find(j => j.id === ganttJobId);
+    const palette = job ? [job.color, ...PHASE_PALETTE.filter(c => c !== job.color)] : PHASE_PALETTE;
+    phaseColorPick.innerHTML = palette.map(c =>
+      `<div class="phase-color-swatch${selectedPhaseColor === c ? ' sel' : ''}" data-color="${c}" style="background:${c};"></div>`
+    ).join('');
+
+    modalPhase.style.display = 'flex';
+    setTimeout(() => phaseNameInput.focus(), 50);
+  }
+
+  function closePhaseModal() {
+    modalPhase.style.display = 'none';
+    editingPhaseId = null; editingPhaseParent = null;
+  }
+
+  phaseColorPick.addEventListener('click', e => {
+    const sw = e.target.closest('.phase-color-swatch');
+    if (!sw) return;
+    selectedPhaseColor = sw.dataset.color;
+    phaseColorPick.querySelectorAll('.phase-color-swatch').forEach(s =>
+      s.classList.toggle('sel', s.dataset.color === selectedPhaseColor)
+    );
+  });
+
+  phaseCancelBtn.addEventListener('click', closePhaseModal);
+  modalPhase.addEventListener('click', e => { if (e.target === modalPhase) closePhaseModal(); });
+
+  phaseSaveBtn.addEventListener('click', async () => {
+    const name = phaseNameInput.value.trim();
+    if (!name) { phaseNameInput.focus(); return; }
+    if (!currentUser) return;
+
+    const id = editingPhaseId || crypto.randomUUID();
+    const existingPhase = editingPhaseId ? state.phases.find(p => p.id === editingPhaseId) : null;
+    const payload = {
+      id,
+      user_id:    currentUser.id,
+      job_id:     ganttJobId,
+      parent_id:  editingPhaseId ? (existingPhase?.parent_id ?? null) : editingPhaseParent,
+      name,
+      start_date: phaseStartInput.value || null,
+      end_date:   phaseEndInput.value   || null,
+      color:      selectedPhaseColor || null,
+      sort_order: existingPhase
+        ? existingPhase.sort_order
+        : state.phases.filter(p => p.job_id === ganttJobId).length,
+    };
+
+    const { error } = await sb.from('schedule_phases').upsert(payload, { onConflict: 'id' });
+    if (error) { showError('Could not save phase', error.message); return; }
+
+    const idx = state.phases.findIndex(p => p.id === id);
+    if (idx >= 0) state.phases[idx] = payload; else state.phases.push(payload);
+
+    closePhaseModal();
+    renderSchedule();
+  });
+
+  phaseDeleteBtn.addEventListener('click', async () => {
+    if (!editingPhaseId || !confirm('Delete this phase and all its sub-phases?')) return;
+    function collectIds(id) {
+      const ids = [id];
+      state.phases.filter(p => p.parent_id === id).forEach(c => ids.push(...collectIds(c.id)));
+      return ids;
+    }
+    const toDelete = collectIds(editingPhaseId);
+    const { error } = await sb.from('schedule_phases').delete().in('id', toDelete);
+    if (error) { showError('Could not delete phase', error.message); return; }
+    state.phases = state.phases.filter(p => !toDelete.includes(p.id));
+    toDelete.forEach(id => collapsedPhases.delete(id));
+    closePhaseModal();
+    renderSchedule();
+  });
+
+  // ---- Gantt click delegation ----
+  ganttContent.addEventListener('click', e => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const action  = btn.dataset.action;
+    const phaseId = btn.dataset.phaseId;
+    if (action === 'expand') {
+      if (collapsedPhases.has(phaseId)) collapsedPhases.delete(phaseId);
+      else collapsedPhases.add(phaseId);
+      renderSchedule();
+    } else if (action === 'edit-phase') {
+      openPhaseModal(phaseId, null);
+    } else if (action === 'add-child') {
+      openPhaseModal(null, phaseId);
+    } else if (action === 'delete-phase') {
+      openPhaseModal(phaseId, null);
+      setTimeout(() => phaseDeleteBtn.click(), 0);
+    }
+  });
+
+  ganttJobSelect.addEventListener('change', () => {
+    ganttJobId = ganttJobSelect.value || null;
+    collapsedPhases.clear();
+    renderSchedule();
+  });
+
+  ganttAddRootBtn.addEventListener('click', () => openPhaseModal(null, null));
+
+  ganttZoom.addEventListener('click', e => {
+    const btn = e.target.closest('.gantt-zoom-btn');
+    if (!btn) return;
+    ganttScale = btn.dataset.ganttScale;
+    ganttZoom.querySelectorAll('.gantt-zoom-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.ganttScale === ganttScale)
+    );
+    renderSchedule();
   });
 
 
