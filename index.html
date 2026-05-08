@@ -6361,36 +6361,43 @@
       return;
     }
 
-    const colW = GANTT_COL_W[ganttScale] || 60;
     const today = new Date(); today.setHours(0,0,0,0);
-    let headerHtml, totalW, tlStart, tlEnd, tlSpanMs, colCellsHtml = '';
+    const minColW = GANTT_COL_W[ganttScale] || 60;
 
+    // Build timeline so we know how many columns exist
+    const tl    = ganttScale === 'week' ? buildWeekTimeline(phases) : buildMonthTimeline(phases);
+    const items = ganttScale === 'week' ? tl.weeks : tl.months;
+    const tlStart = tl.tlStart;
+    const tlEnd   = tl.tlEnd;
+    const tlSpanMs = (tlEnd - tlStart) + 86400000;
+
+    // Stretch columns to fill the viewport when there's room
+    const ganttWrap = document.getElementById('gantt-wrap');
+    const availW = Math.max(0, (ganttWrap?.clientWidth || 1200) - 260 - 2);
+    let colW = minColW;
+    if (items.length > 0 && items.length * minColW < availW) {
+      colW = Math.floor(availW / items.length);
+    }
+    const totalW = items.length * colW;
+
+    const yearHtml = ganttYearGroups(items, colW);
+    let colCellsHtml = '';
+    let monthHtml = '';
     if (ganttScale === 'week') {
-      const tl = buildWeekTimeline(phases);
-      tlStart = tl.tlStart; tlEnd = tl.tlEnd;
-      totalW = tl.weeks.length * colW;
-      tlSpanMs = (tlEnd - tlStart) + 86400000;
-      const yearHtml = ganttYearGroups(tl.weeks, colW);
-      const weekHtml = tl.weeks.map(w => {
+      monthHtml = items.map(w => {
         const isNow = w <= today && today < new Date(w.getTime() + 7*86400000);
         const lbl = (w.getMonth()+1) + '/' + w.getDate();
         colCellsHtml += `<div class="g-col-line${isNow ? ' is-today-month' : ''}" style="width:${colW}px;"></div>`;
         return `<div class="g-month-cell${isNow ? ' is-today-month' : ''}" style="width:${colW}px;">${lbl}</div>`;
       }).join('');
-      headerHtml = `<div class="g-year-row">${yearHtml}</div><div class="g-month-row">${weekHtml}</div>`;
     } else {
-      const tl = buildMonthTimeline(phases);
-      tlStart = tl.tlStart; tlEnd = tl.tlEnd;
-      totalW = tl.months.length * colW;
-      tlSpanMs = (tlEnd - tlStart) + 86400000;
-      const yearHtml = ganttYearGroups(tl.months, colW);
-      const monthHtml = tl.months.map(m => {
+      monthHtml = items.map(m => {
         const isNow = m.getFullYear() === today.getFullYear() && m.getMonth() === today.getMonth();
         colCellsHtml += `<div class="g-col-line${isNow ? ' is-today-month' : ''}" style="width:${colW}px;"></div>`;
         return `<div class="g-month-cell${isNow ? ' is-today-month' : ''}" style="width:${colW}px;">${MONTH_SHORT[m.getMonth()]}</div>`;
       }).join('');
-      headerHtml = `<div class="g-year-row">${yearHtml}</div><div class="g-month-row">${monthHtml}</div>`;
     }
+    const headerHtml = `<div class="g-year-row">${yearHtml}</div><div class="g-month-row">${monthHtml}</div>`;
 
     const todayPx   = dateToPx(today, tlStart, tlSpanMs, totalW);
     const showToday  = today >= tlStart && today <= tlEnd;
@@ -6596,6 +6603,14 @@
       b.classList.toggle('active', b.dataset.ganttScale === ganttScale)
     );
     renderSchedule();
+  });
+
+  // Re-render Gantt on window resize so columns restretch to fill viewport
+  let ganttResizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (currentView !== 'schedule' || !ganttJobId) return;
+    clearTimeout(ganttResizeTimer);
+    ganttResizeTimer = setTimeout(renderSchedule, 120);
   });
 
 
