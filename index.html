@@ -3591,6 +3591,26 @@
     background: var(--bg-2);
   }
   .g-month-cell.is-today-month { color: var(--red); background: rgba(230,57,70,0.07); }
+  /* Day-tick sub-row */
+  .g-day-row {
+    height: 16px;
+    position: relative;
+    background: var(--bg-2);
+    border-bottom: 1px solid var(--line);
+  }
+  .g-day-tick {
+    position: absolute;
+    top: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    color: var(--ink-3);
+    letter-spacing: 0.04em;
+    transform: translateX(-50%);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .g-day-tick.is-month-start { color: var(--ink-1); font-weight: 700; }
+  .g-day-tick.is-today { color: var(--red); font-weight: 700; }
   /* Phase row hover */
   .g-row:not(.g-header):hover .g-tree { background: var(--bg-2); }
   .g-row:not(.g-header):hover .g-tl { background: rgba(255,255,255,0.015); }
@@ -6391,11 +6411,44 @@
       colCellsHtml += `<div class="g-col-line${isNow ? ' is-today-month' : ''}" style="width:${colW}px;"></div>`;
       return `<div class="g-month-cell${isNow ? ' is-today-month' : ''}" style="width:${colW}px;">${MONTH_SHORT[m.getMonth()]}</div>`;
     }).join('');
-    const headerHtml = `<div class="g-year-row">${yearHtml}</div><div class="g-month-row">${monthHtml}</div>`;
+
+    // Day-marker row — density adapts to zoom: 1 Mo → every day; 3/6 Mo → weekly;
+    // 9/12 Mo → 1st & 15th. Skipped only when columns are tiny.
+    const pxPerDay = colW / 30;
+    let dayMode = 'none';
+    if      (pxPerDay >= 25) dayMode = 'every';
+    else if (pxPerDay >= 9)  dayMode = 'weekly';
+    else if (pxPerDay >= 4)  dayMode = 'fortnight';
+
+    const todayMs = today.getTime();
+    let dayHtml = '';
+    if (dayMode !== 'none') {
+      const pickDays = (n, mode) => {
+        if (mode === 'every')     return Array.from({length: n}, (_, i) => i + 1);
+        if (mode === 'weekly')    return [1, 8, 15, 22, 29].filter(d => d <= n);
+        if (mode === 'fortnight') return [1, 15].filter(d => d <= n);
+        return [];
+      };
+      items.forEach(m => {
+        const dim = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+        pickDays(dim, dayMode).forEach(day => {
+          const date = new Date(m.getFullYear(), m.getMonth(), day);
+          const left = dateToPx(date, tlStart, tlSpanMs, totalW);
+          const isMonthStart = day === 1;
+          const isTodayDay   = date.getTime() === todayMs;
+          const cls = `g-day-tick${isMonthStart ? ' is-month-start' : ''}${isTodayDay ? ' is-today' : ''}`;
+          dayHtml += `<div class="${cls}" style="left:${left}px;">${day}</div>`;
+        });
+      });
+    }
+    const dayRowHtml = dayMode !== 'none' ? `<div class="g-day-row">${dayHtml}</div>` : '';
+    const headerHeight = dayMode !== 'none' ? 60 : 44;
+
+    const headerHtml = `<div class="g-year-row">${yearHtml}</div><div class="g-month-row">${monthHtml}</div>${dayRowHtml}`;
 
     const todayPx   = dateToPx(today, tlStart, tlSpanMs, totalW);
     const showToday  = today >= tlStart && today <= tlEnd;
-    const todayLine  = showToday ? `<div class="g-today-line" style="left:${260 + todayPx}px;top:44px;"></div>` : '';
+    const todayLine  = showToday ? `<div class="g-today-line" style="left:${260 + todayPx}px;top:${headerHeight}px;"></div>` : '';
 
     const expandSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>`;
     const addSvg    = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
@@ -6430,7 +6483,9 @@
         const barR = Math.min(totalW, dateToPx(new Date(e.getTime() + 86400000), tlStart, tlSpanMs, totalW));
         const barW = Math.max(4, barR - barL);
         const lbl  = barW > 50 ? escapeHtml(p.name) : '';
-        barHtml = `<div class="g-bar" style="left:${barL}px;width:${barW}px;background:${color};" data-action="edit-phase" data-phase-id="${p.id}">${lbl}</div>`;
+        const fmt = d => `${MONTH_SHORT[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+        const tip = `${p.name}\n${fmt(s)} → ${fmt(e)}`;
+        barHtml = `<div class="g-bar" style="left:${barL}px;width:${barW}px;background:${color};" data-action="edit-phase" data-phase-id="${p.id}" title="${escapeHtml(tip)}">${lbl}</div>`;
       }
 
       return `<div class="g-row" data-phase-id="${p.id}">
