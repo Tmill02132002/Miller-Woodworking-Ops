@@ -6322,8 +6322,18 @@
     return { tlStart, tlEnd, weeks };
   }
 
-  function dateToPx(date, tlStart, tlSpanMs, totalW) {
-    return Math.round((date - tlStart) / tlSpanMs * totalW);
+  // Month-aware: each month occupies exactly colW pixels, regardless of day count.
+  // Within a month, position interpolates linearly by day-of-month so day 1 lands
+  // at the column's left edge and the column boundaries align with month starts.
+  function dateToPx(date, items, colW) {
+    if (!items.length) return 0;
+    const first = items[0];
+    const diff = (date.getFullYear() - first.getFullYear()) * 12 + (date.getMonth() - first.getMonth());
+    if (diff < 0) return 0;
+    if (diff >= items.length) return items.length * colW;
+    const m = items[diff];
+    const dim = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+    return Math.round(diff * colW + ((date.getDate() - 1) / dim) * colW);
   }
 
   function buildVisiblePhases(phases, parentId, level, out) {
@@ -6381,7 +6391,6 @@
     const items   = tl.months;
     const tlStart = tl.tlStart;
     const tlEnd   = tl.tlEnd;
-    const tlSpanMs = (tlEnd - tlStart) + 86400000;
 
     // Column width: fit ganttVisibleMonths in the viewport, with a sensible minimum.
     const ganttWrap = document.getElementById('gantt-wrap');
@@ -6418,7 +6427,7 @@
         const dim = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
         pickDays(dim, dayMode).forEach(day => {
           const date = new Date(m.getFullYear(), m.getMonth(), day);
-          const left = dateToPx(date, tlStart, tlSpanMs, totalW);
+          const left = dateToPx(date, items, colW);
           const isMonthStart = day === 1;
           const isTodayDay   = date.getTime() === todayMs;
           const cls = `g-day-tick${isMonthStart ? ' is-month-start' : ''}${isTodayDay ? ' is-today' : ''}`;
@@ -6431,7 +6440,7 @@
 
     const headerHtml = `<div class="g-year-row">${yearHtml}</div><div class="g-month-row">${monthHtml}</div>${dayRowHtml}`;
 
-    const todayPx   = dateToPx(today, tlStart, tlSpanMs, totalW);
+    const todayPx   = dateToPx(today, items, colW);
     const showToday  = today >= tlStart && today <= tlEnd;
     const todayLine  = showToday ? `<div class="g-today-line" style="left:${260 + todayPx}px;top:${headerHeight}px;"></div>` : '';
 
@@ -6464,8 +6473,8 @@
       if (p.start_date && p.end_date) {
         const s = parseGanttDate(p.start_date);
         const e = parseGanttDate(p.end_date);
-        const barL = Math.max(0, dateToPx(s, tlStart, tlSpanMs, totalW));
-        const barR = Math.min(totalW, dateToPx(new Date(e.getTime() + 86400000), tlStart, tlSpanMs, totalW));
+        const barL = Math.max(0, dateToPx(s, items, colW));
+        const barR = Math.min(totalW, dateToPx(new Date(e.getTime() + 86400000), items, colW));
         const barW = Math.max(4, barR - barL);
         const lbl  = barW > 50 ? escapeHtml(p.name) : '';
         const fmt = d => `${MONTH_SHORT[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
